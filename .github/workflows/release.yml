@@ -11,12 +11,12 @@ jobs:
   release:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: actions/setup-java@v4.7.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3.2.2
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
       - name: Android platform 36 and build-tools 36.0.0
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: The tag matches the app's version
@@ -39,7 +39,7 @@ jobs:
           printf '%s' "$PRISM_KEYSTORE_BASE64" | base64 --decode > "$PRISM_KEYSTORE"
           python3 tools/build.py --release
           rm -f "$PRISM_KEYSTORE"
-      - uses: softprops/action-gh-release@v2.2.2
+      - uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
         with:
           name: Prism ${{ github.ref_name }}
           files: |
