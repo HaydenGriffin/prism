@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- New logo: a P whose counter is a prism, its bowl split into a sky arm (the LG) and an amber arm (the box).
+  Adaptive launcher icon with a themed-icon layer, a new TV banner and a GitHub social preview
+  ([`docs/brand/`](docs/brand)).
+
 ## 1.0.0
 
 The first public release.

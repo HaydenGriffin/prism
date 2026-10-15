@@ -1,7 +1,10 @@
 # Images
 
-`hero.png` is a placeholder drawn by `tools/brand.py`. Replace it with a real screenshot from an Android TV box
-(2400 × 1200 or larger, 2:1), or a composite of three:
+`social.png` (1280 × 640) is the GitHub social preview, drawn by `tools/brand.py`; upload it under the
+repository's Settings → Social preview.
+
+`hero.png` is a placeholder drawn by `tools/brand.py` from the same artwork. Replace it with a real screenshot
+from an Android TV box (2400 × 1200 or larger, 2:1), or a composite of three:
 
 1. **The launcher**: the Continue tile, a full row of favourites with their LG icons, and the live line reading
    "On the LG · …".

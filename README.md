@@ -149,7 +149,8 @@ python3 tools/build.py --release    # build/prism-<version>.apk, not debuggable,
 Keystores are git-ignored; never commit one.
 
 Other tools: `tests/emulator_smoke.py` runs the APK on an Android emulator against a fake Home Assistant;
-`tools/brand.py` draws the icon, banner and placeholder hero from [`docs/brand/`](docs/brand); `tools/icons.mjs`
+`tools/brand.py` draws the launcher icon, TV banner, social preview and placeholder hero from the SVGs in
+[`docs/brand/`](docs/brand) (written by `tools/brand_svg.py`; usage notes in its README); `tools/icons.mjs`
 regenerates the icons from Material Design Icons; `tools/fonts.py` regenerates `res/font` from the variable fonts.
 
 Pushing a `v*` tag builds a signed release on GitHub Actions and attaches the APK and `SHA256SUMS` to a GitHub

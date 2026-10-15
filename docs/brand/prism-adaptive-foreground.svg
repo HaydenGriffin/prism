@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108" role="img" aria-labelledby="title">
+  <title id="title">Prism</title>
+  <g id="symbol" transform="translate(20.33 20.67) scale(0.2604)">
+    <path fill="#80d8ff" d="M96 32 H130 A72 72 0 0 1 200.57 89.72 L160.94 100.34 L98 64 H96 Z"/>
+    <path fill="#ff9d5c" d="M96 176 H130 A72 72 0 0 0 200.57 118.28 L160.94 107.66 L98 144 H96 Z"/>
+    <path fill="#f4f2ee" d="M58 32 H98 V224 H58 Z"/>
+  </g>
+</svg>
