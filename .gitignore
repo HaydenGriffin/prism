@@ -1,0 +1,12 @@
+/build/
+/node_modules/
+*.keystore
+*.jks
+*.p12
+*.pem
+keystore.properties
+connection.json
+token.txt
+*.token
+.DS_Store
+__pycache__/

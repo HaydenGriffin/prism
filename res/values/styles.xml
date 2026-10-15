@@ -1,0 +1,21 @@
+<resources>
+    <color name="surface">#0e0f12</color>
+    <color name="panel">#17191e</color>
+    <color name="raised">#22252b</color>
+    <color name="warn">#ff9d5c</color>
+    <color name="text">#f4f2ee</color>
+    <color name="ink">#16181d</color>
+    <color name="muted">#b9b4ac</color>
+    <color name="accent">#80d8ff</color>
+    <color name="accent_ink">#04222e</color>
+    <color name="error">#ff8a80</color>
+    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/muted</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+</resources>

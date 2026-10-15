@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Prism</string>
+    <string name="accessibility_description">Prism forwards the remote\'s arrows, OK, Back and play buttons to your LG TV through Home Assistant while an LG app or menu is on screen. It filters key presses only: it cannot read the screen or anything you type.</string>
+</resources>

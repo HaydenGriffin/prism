@@ -1,0 +1,41 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="io.github.haydengriffin.prism" android:versionCode="22" android:versionName="1.0.0">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="32" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Home-screen rows. Android 8+ lets an app manage its own preview channels; the permission is declared for
+         TV providers that still ask for it (harmless otherwise). -->
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
+    <!-- targetSdk 30+: the TV provider is invisible without this. -->
+    <queries>
+        <provider android:authorities="android.media.tv" />
+    </queries>
+    <uses-feature android:name="android.software.leanback" android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <application android:label="@string/app_name" android:theme="@style/AppTheme" android:icon="@drawable/icon" android:banner="@drawable/banner" android:allowBackup="false" android:debuggable="true" android:usesCleartextTraffic="true">
+        <service android:name=".AutomaticService" android:label="@string/app_name" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true">
+            <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/automatic_service" />
+        </service>
+        <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="landscape" android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- Shortcuts for a button mapper. LAUNCHER only, not LEANBACK_LAUNCHER: mappers can pick them,
+             TV launchers do not show them as extra tiles. -->
+        <activity android:name=".ShortcutActivity" android:exported="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:excludeFromRecents="true" android:noHistory="true" />
+        <!-- Card images for the home-screen rows: read-only PNGs the launcher loads as poster art. -->
+        <provider android:name=".ArtProvider" android:authorities="io.github.haydengriffin.prism.art" android:exported="true" />
+        <activity-alias android:name=".OpenLgHome" android:targetActivity=".ShortcutActivity" android:label="LG Home" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".OpenLgSettings" android:targetActivity=".ShortcutActivity" android:label="LG Settings" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".OpenQuickSettings" android:targetActivity=".ShortcutActivity" android:label="Quick TV settings" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+    </application>
+</manifest>

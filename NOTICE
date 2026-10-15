@@ -1,0 +1,12 @@
+Prism
+Copyright (c) 2026 Hayden Griffin. MIT License (see LICENSE).
+
+Bundled third-party material:
+
+- res/font/: Atkinson Hyperlegible Next (Braille Institute of America) and Lexend (The Lexend Project Authors),
+  SIL Open Font License 1.1. Static instances made from the variable fonts by tools/fonts.py. See FONTS-LICENSE.txt.
+- res/drawable/ic_*.xml: icon paths from Material Design Icons (https://pictogrammers.com/library/mdi/),
+  Apache License 2.0. See LICENSES/Apache-2.0.txt.
+
+Prism works with Glasshouse (https://github.com/rorygallagher2024/glasshouse) by Rory Gallagher, which runs on the
+TV. No Glasshouse code is included here.
