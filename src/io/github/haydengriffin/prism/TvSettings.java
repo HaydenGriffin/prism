@@ -33,7 +33,7 @@ final class TvSettings {
         final List<String> choices;
         final int min, max;
         String confirmed, shown;
-        /** Labels for particular choices (the Shield's own input reads "Shield"); the choice itself is what is sent. */
+        /** Labels for particular choices (the box's own input reads its name); the choice itself is what is sent. */
         private final java.util.Map<String, String> names = new java.util.HashMap<>();
         Value(Row row, String current, List<String> options, int min, int max) {
             this.row = row; this.choices = choices(options); this.min = min; this.max = max;

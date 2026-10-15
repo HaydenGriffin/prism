@@ -35,7 +35,7 @@ final class SetupScreen {
         s.listRow(R.drawable.ic_remote, "Remotes", RemotesScreen.summary(activity), true,
             () -> host.show(Host.Page.REMOTES)).setTag("remotes");
         s.listRow(R.drawable.ic_tv, "TV", tv == null ? "Choose" : tv.name, true, () -> host.show(Host.Page.CHOOSE_TV)).setTag("tv");
-        s.listRow(R.drawable.ic_shield, "Shield input", tv == null || tv.shieldOption.isEmpty() ? "Choose" : tv.shieldOption, true,
+        s.listRow(R.drawable.ic_shield, host.box().input(), tv == null || tv.shieldOption.isEmpty() ? "Choose" : tv.shieldOption, true,
             () -> host.show(tv == null ? Host.Page.CHOOSE_TV : Host.Page.SHIELD_INPUT)).setTag("input");
         s.listRow(R.drawable.ic_server, "Home Assistant", c == null ? "Connect" : hostName(c.url), true,
             () -> host.show(Host.Page.CONNECTION)).setTag("connection");
@@ -170,7 +170,7 @@ final class SetupScreen {
         TvProfile tv = chosen != null ? chosen : host.profile();
         if (tv == null) { host.show(Host.Page.CHOOSE_TV); return; }
         Screen s = host.screen();
-        s.page("Shield input", tv.name);
+        s.page(host.box().input(), tv.name);
         android.widget.TextView note = s.note("Checking which input is on screen…", false);
         int request = host.request();
         host.work(() -> {
@@ -186,8 +186,8 @@ final class SetupScreen {
                 host.main().post(() -> {
                     if (!host.current(request)) return;
                     note.setText(current.isEmpty()
-                        ? "The TV is not showing an input now. Choose the one the Shield is on; nothing switches."
-                        : "This screen is on " + current + ", so that is the Shield's input.");
+                        ? "The TV is not showing an input now. Choose the one " + host.box().the() + " is on; nothing switches."
+                        : "This screen is on " + current + ", so that is " + host.box().the() + "'s input.");
                     if (!current.isEmpty()) s.listRow(R.drawable.ic_check, "Use " + current, "On screen now", false, () -> save(tv, current));
                     for (String option : hdmi) if (!option.equals(current)) s.listRow(R.drawable.ic_shield, option, "", false, () -> save(tv, option));
                     LauncherScreen.firstFocusable(s.content).requestFocus();

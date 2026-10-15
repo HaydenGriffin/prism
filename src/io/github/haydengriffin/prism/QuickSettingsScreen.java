@@ -39,7 +39,7 @@ final class QuickSettingsScreen {
                     String entity = tv.settings.get(row.role);
                     if (entity == null) continue;
                     TvSettings.Value v = TvData.setting(host.api(), row, entity);
-                    if (v != null && row.role.equals("input_source")) v.named(tv.shieldOption, "Shield");
+                    if (v != null && row.role.equals("input_source")) v.named(tv.shieldOption, host.box().label());
                     if (v != null) values.add(v);
                 }
             } catch (Exception e) {
@@ -97,7 +97,7 @@ final class QuickSettingsScreen {
     private void apply(LinearLayout row, TvSettings.Value value, String entity, int request) {
         if (!value.changed()) return;
         String target = value.shown;
-        String label = value.row.label + " " + value.text(); // shown == target here: "Input Shield", "Energy saving Medium"
+        String label = value.row.label + " " + value.text(); // shown == target here: "Input SHIELD", "Energy saving Medium"
         host.command(() -> {
             try {
                 host.api().setValue(entity, target);

@@ -9,6 +9,7 @@ import java.util.Map;
 /** Launcher logic with no Android types: favourites, recently used, Quick TV settings steps, the live line. */
 public final class UiTests {
     private static int assertions;
+    private static final BoxName BOX = BoxName.of("SHIELD", "SHIELD Android TV");
 
     private static void check(boolean value, String message) {
         assertions++;
@@ -108,11 +109,11 @@ public final class UiTests {
         TvSettings.Row row = TvSettings.row("input_source");
         check(row != null && row.label.equals("Input") && TvSettings.ROWS.get(0) == row, "Input is the first quick setting");
         TvSettings.Value v = new TvSettings.Value(row, "HDMI 3", Arrays.asList("HDMI 1", "HDMI 2", "HDMI 3", "HDMI 4", "Live TV"),
-            0, 0).named("HDMI 3", "Shield");
-        check(v.text().equals("Shield") && !v.changed(), "the Shield's own input reads Shield");
+            0, 0).named("HDMI 3", "SHIELD");
+        check(v.text().equals("SHIELD") && !v.changed(), "the box's own input reads its name");
         check(v.move(1).equals("HDMI 4") && v.text().equals("HDMI 4") && v.changed(), "Right steps to the next input");
         v.move(-1);
-        check(!v.changed() && v.text().equals("Shield"), "back to the Shield: nothing to send");
+        check(!v.changed() && v.text().equals("SHIELD"), "back to the box: nothing to send");
         check(v.move(-1).equals("HDMI 2"), "Left steps back; the option, not the label, is what gets sent");
     }
 
@@ -138,15 +139,15 @@ public final class UiTests {
         check(!before.needsAction && before.tone == Status.Tone.QUIET && !before.text.contains("setup"),
             "before the saved setup is read: neutral, no 'Finish setup' flash");
         RemoteState lg = new RemoteState(RemoteState.Mode.LG, "BBC iPlayer");
-        check(Status.of(true, true, true, lg).text.equals("On the LG · BBC iPlayer")
-            && Status.of(true, true, true, lg).tone == Status.Tone.SKY, "LG has the remote: sky, with the app");
-        check(Status.of(false, true, true, lg).needsAction, "unfinished setup asks for action whatever the service says");
-        check(Status.of(true, false, true, lg).needsAction, "following off asks to turn it on");
-        check(Status.of(true, true, false, lg).tone == Status.Tone.WARN, "no permission is a warning");
-        Status starting = Status.of(true, true, true, new RemoteState(RemoteState.Mode.OFF, ""));
+        check(Status.of(true, true, true, lg, BOX).text.equals("On the LG · BBC iPlayer")
+            && Status.of(true, true, true, lg, BOX).tone == Status.Tone.SKY, "LG has the remote: sky, with the app");
+        check(Status.of(false, true, true, lg, BOX).needsAction, "unfinished setup asks for action whatever the service says");
+        check(Status.of(true, false, true, lg, BOX).needsAction, "following off asks to turn it on");
+        check(Status.of(true, true, false, lg, BOX).tone == Status.Tone.WARN, "no permission is a warning");
+        Status starting = Status.of(true, true, true, new RemoteState(RemoteState.Mode.OFF, ""), BOX);
         check(!starting.needsAction && starting.text.startsWith("Connecting"),
             "a service still starting up shows Connecting, not a false 'turn on' prompt");
-        Status failing = Status.of(true, true, true, new RemoteState(RemoteState.Mode.ERROR, "Home Assistant refused the token"));
+        Status failing = Status.of(true, true, true, new RemoteState(RemoteState.Mode.ERROR, "Home Assistant refused the token"), BOX);
         check(failing.tone == Status.Tone.ALERT && failing.text.equals("Home Assistant refused the token"),
             "errors say the failing step");
     }

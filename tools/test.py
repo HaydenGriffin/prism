@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 JDK = Path(os.environ.get('JAVA_HOME', '/opt/homebrew/opt/openjdk@17'))
 PACKAGE = 'io.github.haydengriffin.prism'
 # Classes with no Android dependency; the service, activity, screens, profile and credentials need a device.
-SOURCES = ('Apps', 'AutoRoute', 'ForegroundState', 'HaHttp', 'HaLink', 'HealthClock', 'Heartbeat', 'HaSocket', 'HomeRows',
+SOURCES = ('Apps', 'AutoRoute', 'BoxName', 'ForegroundState', 'HaHttp', 'HaLink', 'HealthClock', 'Heartbeat', 'HaSocket', 'HomeRows',
            'Json', 'KeyQueue', 'LauncherLayout', 'RemotePolicy', 'Remotes', 'RemoteState', 'RouteStatus', 'Status', 'TvCue',
            'TvRegistry', 'TvRoles', 'TvSettings', 'TvState', 'WebSocket')
 SUITES = ('RemoteTests', 'UiTests', 'HomeRowsTests', 'RemotesTests')

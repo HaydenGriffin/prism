@@ -316,10 +316,11 @@ public final class AutomaticService extends AccessibilityService {
     /** Main thread, on a captured press: fire-and-forget; a refusal or a missing entity is silent. */
     private void showCue(Session s) {
         if (s.tv.notice.isEmpty() || !cue.firstPress()) return;
+        String text = TvCue.text(DeviceName.read(this));
         try {
             side.execute(() -> {
                 try {
-                    s.link.setValue(s.tv.notice, TvCue.TEXT);
+                    s.link.setValue(s.tv.notice, text);
                 } catch (Exception ignored) {
                     // Optional cue.
                 }

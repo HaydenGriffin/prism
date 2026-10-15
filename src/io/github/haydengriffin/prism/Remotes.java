@@ -30,6 +30,7 @@ final class Remotes {
         }
 
         boolean controls() {
+            if (!RemotePolicy.switchable(kind)) return false;
             return chosen != null ? chosen : RemotePolicy.controlsByDefault(kind);
         }
     }
@@ -56,8 +57,9 @@ final class Remotes {
         return true;
     }
 
-    /** Whether a press from this device may go to the LG; a device not seen before gets its kind's default. */
+    /** Whether a press from this device may go to the LG; a device not seen before gets its kind's default. CEC never. */
     synchronized boolean controls(String id, RemotePolicy.Kind kind) {
+        if (!RemotePolicy.switchable(kind)) return false;
         Device known = devices.get(id);
         if (known == null || known.chosen == null) return RemotePolicy.controlsByDefault(kind);
         return known.chosen;
@@ -65,7 +67,7 @@ final class Remotes {
 
     synchronized void choose(String id, boolean on) {
         Device known = devices.get(id);
-        if (known != null) devices.put(id, new Device(id, known.name, known.kind, on));
+        if (known != null && RemotePolicy.switchable(known.kind)) devices.put(id, new Device(id, known.name, known.kind, on));
     }
 
     /** Most recently added last. */
@@ -99,7 +101,7 @@ final class Remotes {
                 if (id.isEmpty() || kind == null) continue;
                 Object on = entry.get("on");
                 remotes.devices.put(id, new Device(id, name.isEmpty() ? "Unnamed device" : name, kind,
-                    on instanceof Boolean ? (Boolean) on : null));
+                    on instanceof Boolean && RemotePolicy.switchable(kind) ? (Boolean) on : null));
             }
         } catch (IOException | RuntimeException e) {
             return new Remotes();

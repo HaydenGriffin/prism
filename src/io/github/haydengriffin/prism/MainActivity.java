@@ -183,12 +183,13 @@ public final class MainActivity extends Activity implements Host {
     private Status status() {
         if (!loaded) return Status.starting();
         boolean setUp = credentials != null && profile != null && !profile.shieldApp.isEmpty();
-        return Status.of(setUp, AutomaticService.enabled(this), AutomaticService.live != null, RemoteState.current);
+        return Status.of(setUp, AutomaticService.enabled(this), AutomaticService.live != null, RemoteState.current, box());
     }
 
     // Host
 
     @Override public Screen screen() { return screen; }
+    @Override public BoxName box() { return DeviceName.read(this); }
     @Override public Handler main() { return main; }
     @Override public IconCache icons() { return icons; }
 

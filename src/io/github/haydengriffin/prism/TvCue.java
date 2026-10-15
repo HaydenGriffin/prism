@@ -6,7 +6,9 @@ package io.github.haydengriffin.prism;
  */
 final class TvCue {
 
-    static final String TEXT = "Shield remote on the LG · hold Back for the Shield";
+    static String text(BoxName box) {
+        return "Remote on the LG · hold Back for " + box.the();
+    }
 
     private boolean shown;
 

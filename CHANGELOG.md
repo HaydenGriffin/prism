@@ -13,8 +13,9 @@ The first public release.
 - Two Android TV home-screen rows, "LG apps" and "LG commands", for launchers that show channels (such as
   Projectivy).
 - The LG on-screen keyboard is driven by the remote while it's up (needs a Glasshouse change not upstream yet).
-- Setup → Remotes: every input device seen pressing keys, with a switch for each. Physical remotes on, HDMI-CEC
-  off, virtual devices off until chosen.
+- Setup → Remotes: every input device seen pressing keys, with a switch for each. Physical remotes on, virtual
+  devices off until chosen; the TV's own remote over HDMI-CEC is always off, since it would loop back to the TV.
+- The box is called by its own name from Android's settings ("On the SHIELD"), or "this box".
 - Setup → Monitoring: an optional heartbeat into an `input_text` of your choice, off by default.
 - Shortcuts for button mappers, and an optional on-TV cue through Glasshouse's screen notification.
 - Builds without Gradle: `tools/build.py` for debug builds, `--release` signs with a key from `PRISM_*`

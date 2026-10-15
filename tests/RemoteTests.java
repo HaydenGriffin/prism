@@ -391,7 +391,7 @@ public final class RemoteTests {
         check(cue.firstPress() && !cue.firstPress(), "leaving the LG starts a new session: once again");
         cue.reset();
         check(cue.firstPress(), "a link drop starts a new session");
-        check(TvCue.TEXT.equals("Shield remote on the LG \u00b7 hold Back for the Shield"), "cue text");
+        check(TvCue.text(BoxName.of(null, null)).equals("Remote on the LG \u00b7 hold Back for this box"), "cue text");
     }
 
     // ---- registry discovery ----

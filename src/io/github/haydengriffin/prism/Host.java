@@ -8,6 +8,8 @@ interface Host {
     enum Page { LAUNCHER, APPS, FAVOURITES, QUICK_SETTINGS, SETUP, CONNECTION, CHOOSE_TV, SHIELD_INPUT, PERMISSION, REMOTES, MONITORING }
 
     Screen screen();
+    /** The box's own name, for "On the SHIELD" and "SHIELD input". */
+    BoxName box();
     Handler main();
     IconCache icons();
 

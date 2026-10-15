@@ -68,11 +68,16 @@ public final class RemotePolicy {
     }
 
     /**
-     * Until the user chooses: physical remotes control the LG; CEC never does, because its presses come from the TV
-     * and would loop back to it; virtual devices are off, and may be turned on for a phone remote app.
+     * Until the user chooses: physical remotes control the LG; virtual devices are off, and may be turned on for a
+     * phone remote app.
      */
     public static boolean controlsByDefault(Kind kind) {
         return kind == Kind.PHYSICAL;
+    }
+
+    /** CEC is the TV's own remote passed through HDMI: forwarding it would loop its presses back to the TV. */
+    public static boolean switchable(Kind kind) {
+        return kind != Kind.CEC;
     }
 
     static boolean cecDevice(String name) {

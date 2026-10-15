@@ -27,7 +27,7 @@ final class LauncherScreen {
             String id = host.resumeApp();
             resume = id == null ? null : Apps.find(host.catalog(), id);
         }
-        s.page("Prism", tv == null ? "" : tv.name + " · Shield on " + tv.shieldOption);
+        s.page("Prism", tv == null ? "" : tv.name + " · " + host.box().label() + " on " + tv.shieldOption);
         s.headerButton(R.drawable.ic_remote, "Setup", () -> host.show(Host.Page.SETUP)).setTag("setup");
         for (LauncherLayout.Row row : LauncherLayout.rows(tv != null, status.needsAction, resume != null)) {
             switch (row) {

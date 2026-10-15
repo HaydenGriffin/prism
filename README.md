@@ -65,7 +65,8 @@ Open Prism on the box. Setup is one list; work down it.
    to read states, subscribe to them and call entity services; admin rights are never needed.
 2. **TV.** Prism lists the Glasshouse TVs it finds in Home Assistant's registries. Entities are matched by their
    role, so renaming them in Home Assistant is fine, and Prism follows added or renamed entities on its own.
-3. **Shield input.** Prism reads which HDMI input the box is on from the TV. Nothing switches.
+3. **The box's input** (for example "SHIELD input"). Prism reads which HDMI input the box is on from the TV.
+   Nothing switches.
 4. **Remote permission.** In the box's Settings → Device Preferences → Accessibility, turn on Prism. This is how it
    receives key presses while another app is open.
 5. **Stay connected in sleep.** Android's Doze cuts apps off the network while the box sleeps, and Android TV has
@@ -87,10 +88,11 @@ Setup → Remotes lists every input device that has pressed a key since the perm
 and a switch for whether it controls the LG. Until you change a switch:
 
 - **Physical** remotes (Bluetooth, USB, IR receivers) control the LG.
-- **HDMI-CEC** is off. It's the TV's own remote passed through to the box, so forwarding it would send the TV's
-  presses back to the TV.
 - **Virtual** devices are off. Phone remote apps and `adb shell input` show up as virtual; turn one on to drive the
   LG from your phone.
+
+The TV's own remote, passed through to the box over HDMI-CEC, is listed without a switch: it can never control the
+LG, because forwarding it would send the TV's presses back to the TV.
 
 ### Monitoring (optional)
 
@@ -107,7 +109,7 @@ is written until you turn it on. The Home Assistant user needs no extra rights f
 - **Going back to the box.** Hold Back for 0.8 s, or press Home.
 - **The launcher.** OK on a tile opens it on the LG, and the remote follows. Favourites are chosen in Setup →
   Favourites, in any order. The header's live line says where the remote is: "On the LG · BBC iPlayer", "On the
-  Shield", "The TV is off", or the step that's failing.
+  SHIELD" (the box's own name, from Android's settings), "The TV is off", or the step that's failing.
 - **Quick TV settings.** Left and Right step a value; it's sent after half a second, or when you leave the row.
 - **Home-screen rows.** "LG apps" has the Continue card and your favourites; "LG commands" has LG Home, LG
   Settings, Quick TV settings and one "Switch to" card per TV input (Setup can hide this row). In Projectivy, add
@@ -118,7 +120,7 @@ is written until you turn it on. The Home Assistant user needs no extra rights f
   can open its activities: `.OpenLgHome`, `.OpenLgSettings`, `.OpenQuickSettings`, or `.ShortcutActivity` with
   `--es target app:<LG app id>` (or `input:<input name>`, which switches the TV's input).
 - **On-TV cue.** If Glasshouse's Screen Notification entity is enabled in Home Assistant, the first press of each
-  LG session shows "Shield remote on the LG · hold Back for the Shield" on the TV.
+  LG session shows "Remote on the LG · hold Back for the SHIELD" on the TV.
 
 How the routing works, including timings and what happens when the link drops, is in
 [`docs/how-it-works.md`](docs/how-it-works.md).
@@ -159,7 +161,6 @@ Release (see [`.github/workflows/release.yml`](.github/workflows/release.yml)).
 - Every press is a Home Assistant service call, so how fast it feels depends on your network and Home Assistant.
   Held arrows repeat at most every 150 ms.
 - Volume, power and the mic button are never taken. Use the box's own CEC volume, or the LG remote.
-- The app's screens call the box "Shield", the box it was built on.
 - The keyboard needs a Glasshouse change that isn't upstream yet.
 - Projectivy's menu path for adding the rows hasn't been checked against every version.
 

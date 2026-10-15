@@ -2,7 +2,7 @@ package io.github.haydengriffin.prism;
 
 import java.util.List;
 
-/** Setup → Remotes: device kinds, defaults, the user's switches, the saved list, and the monitoring entity id. */
+/** Setup → Remotes (kinds, defaults, switches, the saved list), the box's name, and the monitoring entity id. */
 public final class RemotesTests {
     private static int assertions;
 
@@ -18,6 +18,7 @@ public final class RemotesTests {
         saved();
         limit();
         monitoringEntity();
+        boxName();
         System.out.println(assertions + " Remotes assertions passed");
     }
 
@@ -53,7 +54,10 @@ public final class RemotesTests {
         r.choose("phone", true);
         check(r.controls("phone", RemotePolicy.Kind.VIRTUAL), "a phone remote app can be turned on");
         r.choose("cec", true);
-        check(r.controls("cec", RemotePolicy.Kind.CEC), "CEC can be turned on deliberately");
+        check(!r.controls("cec", RemotePolicy.Kind.CEC), "CEC can't be turned on: it would loop back to the TV");
+        check(r.list().get(1).chosen == null && !r.list().get(1).controls(), "choosing CEC stores nothing");
+        check(!RemotePolicy.switchable(RemotePolicy.Kind.CEC) && RemotePolicy.switchable(RemotePolicy.Kind.VIRTUAL),
+            "only CEC has no switch");
         r.seen("bt1", "SHIELD Remote 3", RemotePolicy.Kind.PHYSICAL);
         check(!r.controls("bt1", RemotePolicy.Kind.PHYSICAL), "a rename keeps the choice");
         r.choose("never-seen", true);
@@ -75,6 +79,8 @@ public final class RemotesTests {
         check(back.list().get(0).name.equals("Remote \"A\"") && back.list().get(0).chosen == null,
             "names are escaped; no choice stays no choice");
         check(back.controls("phone", RemotePolicy.Kind.VIRTUAL), "choices survive a restart");
+        Remotes cec = Remotes.fromJson("[{\"id\":\"c\",\"name\":\"Hdmi CEC\",\"kind\":\"CEC\",\"on\":true}]");
+        check(!cec.controls("c", RemotePolicy.Kind.CEC) && cec.list().get(0).chosen == null, "a saved CEC switch is ignored");
         check(Remotes.fromJson("not json").list().isEmpty(), "an unreadable list starts empty");
         check(Remotes.fromJson("").list().isEmpty() && Remotes.fromJson(null).list().isEmpty(), "nothing saved yet");
         Remotes partial = Remotes.fromJson("[{\"id\":\"a\",\"name\":\"A\",\"kind\":\"PHYSICAL\"},{\"id\":\"b\",\"kind\":\"ROBOT\"},{\"name\":\"no id\",\"kind\":\"CEC\"}]");
@@ -86,6 +92,22 @@ public final class RemotesTests {
         for (int i = 0; i < Remotes.MAX + 5; i++) r.seen("d" + i, "Device " + i, RemotePolicy.Kind.VIRTUAL);
         check(r.list().size() == Remotes.MAX, "the list is capped");
         check(r.list().get(0).id.equals("d5"), "the oldest are forgotten first");
+    }
+
+    private static void boxName() {
+        BoxName shield = BoxName.of("SHIELD", "SHIELD Android TV");
+        check(shield.label().equals("SHIELD") && shield.the().equals("the SHIELD") && shield.input().equals("SHIELD input"),
+            "the device name from Android's settings");
+        check(BoxName.of("  ", "Chromecast").the().equals("the Chromecast"), "no device name: the model");
+        check(BoxName.of(" Lounge box ", null).label().equals("Lounge box"), "trimmed");
+        BoxName unknown = BoxName.of(null, "");
+        check(unknown.label().equals("This box") && unknown.the().equals("this box") && unknown.input().equals("Box input"),
+            "neither: this box");
+        check(Status.of(true, true, true, new RemoteState(RemoteState.Mode.SHIELD, ""), shield).text.equals("On the SHIELD"),
+            "the live line names the box");
+        check(Status.of(true, true, true, new RemoteState(RemoteState.Mode.PAUSED, ""), unknown).text.equals("Back on this box"),
+            "and falls back to this box");
+        check(TvCue.text(shield).equals("Remote on the LG \u00b7 hold Back for the SHIELD"), "the on-TV cue names the box");
     }
 
     private static void monitoringEntity() {
