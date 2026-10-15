@@ -127,5 +127,18 @@ final class Apps {
         return null;
     }
 
+    /**
+     * Home Assistant's history of the TV's active app over the last `days`. Without end_time HA answers one day from
+     * the start, which for a fortnight back is already purged: the list came back empty.
+     */
+    static String historyPath(String entity, long nowMs, int days) {
+        java.text.SimpleDateFormat iso = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
+        iso.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        String start = iso.format(new java.util.Date(nowMs - days * 86_400_000L));
+        String end = iso.format(new java.util.Date(nowMs));
+        return "history/period/" + start + "?end_time=" + end + "&filter_entity_id=" + entity
+            + "&minimal_response&no_attributes";
+    }
+
     private Apps() {}
 }

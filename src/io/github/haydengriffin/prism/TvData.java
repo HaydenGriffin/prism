@@ -1,12 +1,8 @@
 package io.github.haydengriffin.prism;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -48,12 +44,8 @@ final class TvData {
 
     /** Active-app values (titles or ids) over the last fortnight, oldest first. */
     static List<String> history(HaHttp api, TvProfile tv) throws IOException {
-        SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
-        iso.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String since = iso.format(new Date(System.currentTimeMillis() - HISTORY_DAYS * 86_400_000L));
         try {
-            JSONArray series = new JSONArray(api.browse("history/period/" + since + "?filter_entity_id=" + tv.active
-                + "&minimal_response&no_attributes"));
+            JSONArray series = new JSONArray(api.browse(Apps.historyPath(tv.active, System.currentTimeMillis(), HISTORY_DAYS)));
             List<String> values = new ArrayList<>();
             JSONArray rows = series.length() == 0 ? new JSONArray() : series.getJSONArray(0);
             for (int i = 0; i < rows.length(); i++) values.add(rows.getJSONObject(i).optString("state"));

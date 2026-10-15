@@ -57,7 +57,8 @@ final class Credentials {
         if (!saved) throw new IOException("Could not save the connection.");
     }
 
-    static Credentials load(Context context) throws Exception {
+    /** Synchronized: the launcher, the service and the home-screen rows all load at start, and only one may provision. */
+    static synchronized Credentials load(Context context) throws Exception {
         // Optional one-use provisioning through `adb shell -T run-as`, never an exported intent.
         File incoming = new File(context.getFilesDir(), "connection.json");
         if (incoming.exists()) return provision(context, incoming);

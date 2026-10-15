@@ -72,6 +72,11 @@ public final class UiTests {
         check(ids.equals(Arrays.asList("demand5", "com.fvp.itv", "bbc.sounds.1.0")),
             "recent: newest first, once each, by title or id; favourites, Settings and inputs left out: " + ids);
         check(Apps.recent(new ArrayList<>(), catalog, f).isEmpty(), "no history, no recent row");
+        // 1 Jan 2026 00:00 UTC; HA answers one day from the start unless end_time is given.
+        String path = Apps.historyPath("sensor.tv_active_app", 1767225600000L, 14);
+        check(path.startsWith("history/period/2025-12-18T00:00:00Z?end_time=2026-01-01T00:00:00Z&"),
+            "history covers the whole fortnight up to now: " + path);
+        check(path.contains("filter_entity_id=sensor.tv_active_app") && path.contains("minimal_response"), "history filters");
         check(app("x", " itvx").initial().equals("I") && app("x", "").initial().equals("?"), "lettered tile initial");
     }
 
