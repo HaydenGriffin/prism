@@ -37,6 +37,11 @@ final class TvState {
         route.observe(foreground.target(), foreground.keyboard(), now);
     }
 
+    /** An LG panel over the box's own input (see ForegroundState.overlayOn). */
+    boolean overlayOnBox() {
+        return foreground.overlayOn(shieldApp);
+    }
+
     void lost() {
         route.invalidate();
         foreground.clear();

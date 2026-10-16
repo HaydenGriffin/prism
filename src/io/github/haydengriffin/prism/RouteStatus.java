@@ -18,6 +18,7 @@ final class RouteStatus {
         SYSTEM_TITLES.put("com.webos.app.settings", "LG Settings");
         SYSTEM_TITLES.put("com.webos.app.quicksettings", "Quick Settings");
         SYSTEM_TITLES.put("com.webos.app.tvuserguide", "User Guide");
+        SYSTEM_TITLES.put("com.webos.app.voice", "LG search");
         SYSTEM_TITLES.put("com.webos.systemui.notification", "LG message");
     }
 

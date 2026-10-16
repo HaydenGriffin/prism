@@ -69,6 +69,17 @@ final class ForegroundState {
         launch.clear();
     }
 
+    /**
+     * Whether an LG panel (search, LG Home, Settings, a popup) is in front while the TV's input underneath is already
+     * `input`: then selecting that input changes nothing, and only the LG's Back takes the panel away.
+     */
+    boolean overlayOn(String input) {
+        if (!on() || input == null || input.isEmpty()) return false;
+        String base = Json.text(active.attributes.get("app_id"));
+        String front = target();
+        return base.equals(input) && !front.isEmpty() && !front.equals(input);
+    }
+
     /** Empty when the TV is off or unknown; otherwise the visible control surface, as AutoRoute expects. */
     String target() {
         if (!on()) return "";

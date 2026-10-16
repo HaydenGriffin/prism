@@ -485,11 +485,29 @@ public final class AutomaticService extends AccessibilityService {
             }
         }
 
+        /**
+         * Escapes thread. Usually selects the box's input. When the TV is already on it under an LG panel (search,
+         * LG Home, Settings), selecting it changes nothing, so this presses the LG's Back until the panel is gone,
+         * at most three times.
+         */
         void selectShield() {
             try {
-                link.select(tv.input, tv.shieldOption);
+                String back = tv.buttons.get("back");
+                for (int i = 0; i < 3 && back != null && overlayOnBox(); i++) {
+                    link.press(back);
+                    Thread.sleep(800);
+                }
+                if (!overlayOnBox()) link.select(tv.input, tv.shieldOption);
             } catch (IOException e) {
                 Log.w(TAG, "Box input not confirmed: " + e.getClass().getSimpleName());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        private boolean overlayOnBox() {
+            synchronized (lock) {
+                return session == this && state.overlayOnBox();
             }
         }
     }

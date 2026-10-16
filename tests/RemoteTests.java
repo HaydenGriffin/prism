@@ -507,6 +507,7 @@ public final class RemoteTests {
 
     private static void keyboard() throws Exception {
         keyboardState();
+        overlayOnBox();
         keyboardRoute();
         keyboardStatus();
         keyboardKeys();
@@ -530,6 +531,20 @@ public final class RemoteTests {
         check(!s.keyboard(), "a TV that is off shows no keyboard, whatever the attribute says");
         s.clear();
         check(!s.keyboard(), "clear forgets the keyboard");
+    }
+
+    private static void overlayOnBox() throws Exception {
+        ForegroundState s = new ForegroundState("sensor.tv", "select.tv_app");
+        check(!s.overlayOn("com.webos.app.hdmi3"), "nothing known: no overlay");
+        s.apply(obj("{\"a\":{\"sensor.tv\":{\"s\":\"SHIELD (HDMI3)\",\"a\":{\"app_id\":\"com.webos.app.hdmi3\",\"control_app_id\":\"com.webos.app.voice\"}}}}"));
+        check(s.overlayOn("com.webos.app.hdmi3"), "LG search above the box's input: an overlay to dismiss with Back");
+        check(!s.overlayOn("com.webos.app.hdmi1"), "above another input: selecting the box's input is what's needed");
+        s.apply(obj("{\"c\":{\"sensor.tv\":{\"+\":{\"a\":{\"control_app_id\":\"com.webos.app.hdmi3\"}}}}}"));
+        check(!s.overlayOn("com.webos.app.hdmi3"), "panel gone: the box's input is in front");
+        s.apply(obj("{\"c\":{\"sensor.tv\":{\"+\":{\"a\":{\"app_id\":\"bbc.iplayer.3.0\",\"control_app_id\":\"bbc.iplayer.3.0\"}}}}}"));
+        check(!s.overlayOn("com.webos.app.hdmi3"), "an LG app in front: switch the input as usual");
+        s.apply(obj("{\"c\":{\"sensor.tv\":{\"+\":{\"s\":\"off\",\"a\":{\"app_id\":\"com.webos.app.hdmi3\",\"control_app_id\":\"com.webos.app.home\"}}}}}"));
+        check(!s.overlayOn("com.webos.app.hdmi3"), "a TV that is off has no overlay");
     }
 
     private static void keyboardRoute() {
