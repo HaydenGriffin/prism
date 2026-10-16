@@ -1,0 +1,81 @@
+name: Device report
+description: Tell us how Prism works on your box and remote, so the compatibility table can say "tested".
+title: "Device report: <box> + <remote>"
+labels: ["device report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing Prism. Fill in what you can; "didn't try" is a fine answer. Please don't paste Home
+        Assistant tokens or addresses.
+  - type: input
+    id: box
+    attributes:
+      label: Box
+      description: Make and model, e.g. "Chromecast with Google TV (4K)", "Fire TV Stick 4K Max (2nd gen)".
+    validations:
+      required: true
+  - type: input
+    id: android
+    attributes:
+      label: Android or Fire OS version
+      description: Settings → System → About. For Fire TV, the Fire OS version.
+    validations:
+      required: true
+  - type: input
+    id: remote
+    attributes:
+      label: Remote
+      description: The remote you pressed, e.g. "the box's own voice remote", "an Air Mouse G20 over Bluetooth".
+    validations:
+      required: true
+  - type: input
+    id: launcher
+    attributes:
+      label: Launcher
+      description: The home screen you use, e.g. "Google TV's own", "Projectivy 4.72".
+  - type: input
+    id: versions
+    attributes:
+      label: Prism, Glasshouse and TV
+      description: Prism version (Setup shows it), Glasshouse version or commit, and your LG model.
+      placeholder: Prism 1.0.0 · Glasshouse 0.93 · OLED55C1
+  - type: dropdown
+    id: setup
+    attributes:
+      label: Setup
+      description: Did the Accessibility switch, the Doze step and choosing the TV go smoothly?
+      options:
+        - Went smoothly
+        - Needed a workaround (please describe below)
+        - Couldn't finish setup (please describe below)
+    validations:
+      required: true
+  - type: checkboxes
+    id: works
+    attributes:
+      label: What worked
+      description: Tick what worked on your box. Leave unticked what didn't work or you didn't try, and say which below.
+      options:
+        - label: Arrows and OK drive an LG app
+        - label: A short Back goes back in the LG app
+        - label: Holding Back returns to the box's input
+        - label: Home returns to the box's input
+        - label: Play/Pause, rewind and fast-forward reach the LG app
+        - label: Holding an arrow keeps moving
+        - label: The remote follows the LG when you open LG Home or LG Settings
+        - label: The LG on-screen keyboard can be driven with the remote
+        - label: Setup → Remotes lists your remote
+        - label: The "LG apps" and "LG commands" rows show on the home screen
+        - label: Prism stays connected after the box has been asleep for an hour or more
+  - type: textarea
+    id: notes
+    attributes:
+      label: What didn't work, and anything else
+      description: Which ticks are "didn't work" and which are "didn't try"; workarounds; anything surprising.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (optional)
+      description: "`adb logcat -s Prism:*` around the problem. Prism never logs tokens or what you type."
+      render: text

@@ -52,9 +52,33 @@ The "LG apps" row on Projectivy's home screen, with the Continue card first:
   a Glasshouse change that isn't upstream yet; without it the keyboard part does nothing and everything else works.
 - **Home Assistant** on your local network, with the TV's Glasshouse entities enabled (Launch App, Input Source,
   Active App and the Remote buttons).
-- **An Android TV or Google TV box.** Tested on an NVIDIA Shield (Android 11). Android 8 or later.
+- **An Android TV or Google TV box**, Android 8 or later. Tested on an NVIDIA Shield (Android 11); see
+  [Compatibility](#compatibility) for other boxes.
 - **For the home-screen rows**, a launcher that shows apps' channels as rows, such as Projectivy. The stock Google
   TV home screen doesn't.
+
+## Compatibility
+
+Prism has been tested on one setup so far. Everything else in this table is what should happen, not what has been
+seen. If you try Prism on something else, a [device report](https://github.com/HaydenGriffin/prism/issues/new?template=device-report.yml)
+is the most useful thing you can send: it turns a row below from "expected" into "tested".
+
+| Box | Status | Notes |
+|---|---|---|
+| NVIDIA Shield TV (Android 11) | ✅ Tested | Shield remote; Projectivy for the home-screen rows. |
+| Chromecast with Google TV, Google TV Streamer, onn. 4K and other Google TV boxes | Expected, untested | The remote should work. The rows need a launcher such as Projectivy; Google TV's own home screen doesn't show them. Newer Android versions may block the Accessibility switch for apps installed outside a store until you allow restricted settings in Prism's app info. Run the `deviceidle` step from Setup: these boxes stop background apps readily. |
+| Other Android TV boxes (Xiaomi, Homatics, Nokia and others) | Expected, untested | Should behave like the Shield. |
+| Fire TV on Fire OS 7 or 8 | Expected, untested | The remote should work; Fire OS button mappers use the same Accessibility key filtering. The home-screen rows won't show, because Fire TV's launcher doesn't display channels and newer Fire OS makes replacing it hard. |
+| Fire TV on Vega OS (newer sticks such as the Fire TV Stick 4K Select) | ❌ Not possible | Vega OS isn't Android, so it can't install APKs. |
+
+**Remotes.** Prism only uses the standard arrow, OK, Back, Home and media keys, so it should work with any remote
+the box treats as a physical device: Bluetooth remotes, the box's own IR receiver, air mice and keyboards. Setup →
+Remotes lists each one Prism has seen, and you can turn any of them off. Some remotes are left out on purpose:
+
+- **The TV's own remote over HDMI-CEC** never controls the TV through Prism, because its presses would loop back.
+- **Phone remote apps and adb** are off until you turn them on in Setup → Remotes.
+- **Volume, power and the mic button** are always left to the box.
+- **Buttons for particular apps** (Netflix, YouTube and similar) do whatever the box normally does.
 
 ## Install
 
@@ -173,6 +197,7 @@ Release (see [`.github/workflows/release.yml`](.github/workflows/release.yml)).
 
 ## Limitations
 
+- Tested on an NVIDIA Shield only; see [Compatibility](#compatibility).
 - Prism controls one LG TV, and only one that runs Glasshouse. Stock webOS isn't supported.
 - Every press is a Home Assistant service call, so how fast it feels depends on your network and Home Assistant.
   Held arrows repeat at most every 150 ms.
