@@ -16,9 +16,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
       - name: Android platform 36 and build-tools 36.0.0
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+        # The runner image ships the Android SDK (ANDROID_HOME); add what the build needs.
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0" > /dev/null
       - name: The tag matches the app's version
         run: |
           version=$(sed -n 's/.*android:versionName="\([^"]*\)".*/\1/p' AndroidManifest.xml)
