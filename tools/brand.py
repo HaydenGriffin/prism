@@ -5,7 +5,6 @@
     res/drawable/icon.xml                           the icon tile as a vector (home-screen channel logo)
     res/drawable/ic_launcher_foreground.xml         adaptive launcher icon foreground (and monochrome layer)
     docs/images/social.png                          GitHub social preview, 1280 × 640
-    docs/images/hero.png                            README hero placeholder, 2400 × 1200
     docs/brand/png/                                 icon PNGs (512, 192, 180) and favicon.ico (16, 32, 48)
 
 The SVGs come from tools/brand_svg.py. They use a small subset of SVG (rect, g and path with absolute
@@ -277,7 +276,6 @@ def app():
 
 def repo():
     save_png(render(BRAND / 'prism-social.svg', 1280, 640), ROOT / 'docs/images/social.png')
-    save_png(render(BRAND / 'prism-social.svg', 2400, 1200), ROOT / 'docs/images/hero.png')
     png = BRAND / 'png'
     for size, name in ((512, 'prism-icon-512.png'), (192, 'prism-icon-192.png'), (180, 'apple-touch-icon.png')):
         save_png(render(BRAND / 'prism-icon.svg', size, size), png / name)

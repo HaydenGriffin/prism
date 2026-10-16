@@ -22,7 +22,7 @@ the app's icon, banner and PNGs. Change the artwork in `brand_svg.py`, then run 
 | `prism-icon-small.svg` | Small-size cut of the tile for 16 and 32 px (heavier stem on the pixel grid) |
 | `prism-adaptive-foreground.svg` | Android adaptive-icon foreground (108 grid, mark inside the 66 safe circle) |
 | `prism-banner.svg` | Android TV banner, 320 × 180 |
-| `prism-social.svg` | GitHub social preview and README hero, 2:1 |
+| `prism-social.svg` | GitHub social preview, 2:1 |
 | `png/` | `prism-icon-512.png`, `prism-icon-192.png`, `apple-touch-icon.png` (180), `favicon.ico` (16/32/48) |
 
 The GitHub social preview is `docs/images/social.png`. Upload it under the repository's Settings → Social preview.

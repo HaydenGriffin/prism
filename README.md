@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/hero.png" alt="Prism: one remote for an Android TV box and an LG TV" width="100%">
+  <img src="docs/images/hero.png" alt="Prism on an NVIDIA Shield: the launcher with Continue on the LG, favourite LG apps and recently used apps, beside Quick TV settings and the LG apps row in Projectivy" width="100%">
 </p>
 
 # Prism
@@ -31,6 +31,18 @@ without picking up the LG remote.
 - **The LG keyboard.** While the LG's on-screen keyboard is up, the remote drives it, and a keyboard's Delete and
   keypad Enter go to the LG keyboard's own keys.
 - **You choose the remotes.** Setup → Remotes lists every input device that has pressed a key, each with a switch.
+
+## Screenshots
+
+From an NVIDIA Shield with a 2021 LG C1.
+
+| The launcher | Quick TV settings |
+|---|---|
+| <img src="docs/images/screenshots/launcher.png" alt="The Prism launcher: Continue on the LG with Afterglow, favourite LG apps with their own icons, and recently used apps"> | <img src="docs/images/screenshots/quick-settings.png" alt="Quick TV settings: input, picture mode, OLED brightness, energy saving, sound mode and sleep timer, each changed with Left and Right"> |
+
+The "LG apps" row on Projectivy's home screen, with the Continue card first:
+
+<img src="docs/images/screenshots/home-rows.png" alt="The LG apps row in Projectivy: Afterglow with a Continue badge, then House, Home Dashboard and Homebrew Channel" width="100%">
 
 ## Requirements
 
@@ -149,7 +161,8 @@ python3 tools/build.py --release    # build/prism-<version>.apk, not debuggable,
 Keystores are git-ignored; never commit one.
 
 Other tools: `tests/emulator_smoke.py` runs the APK on an Android emulator against a fake Home Assistant;
-`tools/brand.py` draws the launcher icon, TV banner, social preview and placeholder hero from the SVGs in
+`tools/hero.py` draws the README hero and screenshots from screenshots taken on the box;
+`tools/brand.py` draws the launcher icon, TV banner and social preview from the SVGs in
 [`docs/brand/`](docs/brand) (written by `tools/brand_svg.py`; usage notes in its README); `tools/icons.mjs`
 regenerates the icons from Material Design Icons; `tools/fonts.py` regenerates `res/font` from the variable fonts.
 
