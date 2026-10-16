@@ -124,8 +124,10 @@ is written until you turn it on. The Home Assistant user needs no extra rights f
   SHIELD" (the box's own name, from Android's settings), "The TV is off", or the step that's failing.
 - **Quick TV settings.** Left and Right step a value; it's sent after half a second, or when you leave the row.
 - **Home-screen rows.** "LG apps" has the Continue card and your favourites; "LG commands" has LG Home, LG
-  Settings, Quick TV settings and one "Switch to" card per TV input (Setup can hide this row). In Projectivy, add
-  them in its settings for channels and rows; the exact menu path may differ between versions.
+  Settings, Quick TV settings and one "Switch to" card for each input the TV has used lately, under the TV's own
+  name for it (Setup can hide this row). Projectivy keeps new channels hidden: open its settings (the gear at the
+  top), then Edit channels → Prism, pick each row and turn on Visible. The rows appear at the bottom of the home
+  screen (checked on Projectivy 4.72).
 - **The LG keyboard.** When the LG asks for text, the remote drives its on-screen keyboard. A keyboard's Delete and
   keypad Enter press the LG keyboard's own keys.
 - **Shortcuts for a button mapper.** Prism doesn't remap buttons itself, but a button mapper such as TvQuickActions
@@ -176,7 +178,11 @@ Release (see [`.github/workflows/release.yml`](.github/workflows/release.yml)).
   Held arrows repeat at most every 150 ms.
 - Volume, power and the mic button are never taken. Use the box's own CEC volume, or the LG remote.
 - The keyboard needs a Glasshouse change that isn't upstream yet.
-- Projectivy's menu path for adding the rows hasn't been checked against every version.
+- The steps for showing the rows in Projectivy were checked on version 4.72 only.
+
+## Support
+
+Prism is free. If it saves you a reach for the other remote, you can [buy me a coffee](https://buymeacoffee.com/haydengriffin).
 
 ## Credits
 
