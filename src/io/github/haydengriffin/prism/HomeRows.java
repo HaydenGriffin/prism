@@ -60,16 +60,50 @@ final class HomeRows {
         return out;
     }
 
-    /** "LG commands": LG Home (when its button is on), LG Settings, Quick TV settings, then every other input. */
-    static List<Item> commands(boolean hasHome, List<String> inputOptions, String shieldOption) {
+    /**
+     * "LG commands": LG Home (when its button is on), LG Settings, Quick TV settings, then the other inputs. With names
+     * from the TV's history (see inputNames), only the inputs it has shown, under its own names ("PS5 Game Console");
+     * without them, every input under the select's option.
+     */
+    static List<Item> commands(boolean hasHome, List<String> inputOptions, String shieldOption, Map<String, String> names) {
         List<Item> out = new ArrayList<>();
         if (hasHome) out.add(new Item("cmd:home", "LG Home", "lg_home", Glyph.HOME, null, false));
         out.add(new Item("cmd:settings", "LG Settings", "lg_settings", Glyph.SETTINGS, null, false));
         out.add(new Item("cmd:quick", "Quick TV settings", "quick_settings", Glyph.TUNE, null, false));
+        boolean named = false;
+        for (String option : inputs(inputOptions, shieldOption)) named |= names.containsKey(fold(option));
         for (String option : inputs(inputOptions, shieldOption)) {
-            out.add(new Item("input:" + option, "Switch to " + option, "input:" + option, Glyph.INPUT, null, false));
+            String name = names.get(fold(option));
+            if (named && name == null) continue; // Never on screen lately: nothing plugged in, or unused.
+            String label = name == null ? option : name;
+            out.add(new Item("input:" + option, "Switch to " + label, "input:" + option, Glyph.INPUT, null, false));
         }
         return out;
+    }
+
+    /**
+     * Input names from the TV's active-app history, newest wins: LG titles an input "PS5 Game Console (HDMI1)", and
+     * Live TV by itself. Keyed by the folded select option ("hdmi 1", "live tv").
+     */
+    static Map<String, String> inputNames(List<String> history) {
+        Map<String, String> out = new java.util.HashMap<>();
+        java.util.regex.Pattern hdmi = java.util.regex.Pattern.compile("^(.*?)\\s*\\(HDMI\\s*(\\d)\\)\\s*$",
+            java.util.regex.Pattern.CASE_INSENSITIVE);
+        for (String raw : history) {
+            String value = raw == null ? "" : raw.trim();
+            java.util.regex.Matcher m = hdmi.matcher(value);
+            if (m.matches()) {
+                String name = m.group(1).trim();
+                out.put("hdmi " + m.group(2), name.isEmpty() ? "HDMI " + m.group(2) : name);
+            } else if (fold(value).equals("live tv")) {
+                out.put("live tv", "Live TV");
+            }
+        }
+        return out;
+    }
+
+    private static String fold(String s) {
+        return s == null ? "" : s.trim().toLowerCase(Locale.ROOT);
     }
 
     /** The input select's options without the Shield's own input, blanks or repeats, in the select's order. */

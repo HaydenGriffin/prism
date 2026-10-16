@@ -147,11 +147,13 @@ final class ChannelSync {
         if (credentials == null || tv == null) return out;
         HaHttp api = new HaHttp(credentials.url, credentials.token);
         List<Apps.App> catalog = catalog(api, tv);
+        List<String> history = history(api, tv);
         String last = HomeRows.lastApp(lastApp(context), Collections.<String>emptyList(), catalog);
-        if (last == null) last = HomeRows.lastApp(null, history(api, tv), catalog);
+        if (last == null) last = HomeRows.lastApp(null, history, catalog);
         out.put(HomeRows.APPS, HomeRows.apps(last, catalog, MainActivity.storedFavourites(context)));
         if (commandsOn(context)) {
-            out.put(HomeRows.COMMANDS, HomeRows.commands(tv.buttons.containsKey("home"), inputs(api, tv), tv.shieldOption));
+            out.put(HomeRows.COMMANDS, HomeRows.commands(tv.buttons.containsKey("home"), inputs(api, tv), tv.shieldOption,
+                HomeRows.inputNames(history)));
         }
         return out;
     }

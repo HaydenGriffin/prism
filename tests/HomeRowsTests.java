@@ -71,16 +71,31 @@ public final class HomeRowsTests {
         check(HomeRows.lastApp(null, history, new ArrayList<>()) == null, "no catalog, no last app");
     }
 
+    private static final java.util.Map<String, String> NONE = java.util.Collections.emptyMap();
+
     private static void commandsRow() {
         List<String> options = Arrays.asList("HDMI 1", "HDMI 2", "HDMI 3", "PS5", "Live TV");
-        List<HomeRows.Item> row = HomeRows.commands(true, options, "HDMI 3");
+        List<HomeRows.Item> row = HomeRows.commands(true, options, "HDMI 3", NONE);
         check(keys(row).equals(Arrays.asList("cmd:home", "cmd:settings", "cmd:quick", "input:HDMI 1", "input:HDMI 2",
             "input:PS5", "input:Live TV")), "LG Home, Settings, Quick TV settings, then inputs but the Shield's: " + keys(row));
         check(row.get(5).title.equals("Switch to PS5") && row.get(5).target.equals("input:PS5"), "an input card switches to it");
         check(row.get(0).target.equals("lg_home") && row.get(1).target.equals("lg_settings") && row.get(2).target.equals("quick_settings"),
             "commands use the existing shortcut targets");
-        check(keys(HomeRows.commands(false, options, "HDMI 3")).get(0).equals("cmd:settings"), "no LG Home card while its button is off");
-        check(HomeRows.commands(true, new ArrayList<>(), "HDMI 3").size() == 3, "no input list: the three commands only");
+        check(keys(HomeRows.commands(false, options, "HDMI 3", NONE)).get(0).equals("cmd:settings"), "no LG Home card while its button is off");
+        check(HomeRows.commands(true, new ArrayList<>(), "HDMI 3", NONE).size() == 3, "no input list: the three commands only");
+
+        List<String> tvHistory = Arrays.asList("BBC iPlayer", "PS5 Game Console (HDMI1)", "SHIELD Game Console (HDMI3)",
+            "Off", "Old Name (HDMI1)", "PS5 Game Console (HDMI1)", "unavailable");
+        java.util.Map<String, String> names = HomeRows.inputNames(tvHistory);
+        check("PS5 Game Console".equals(names.get("hdmi 1")) && names.get("hdmi 2") == null && !names.containsKey("live tv"),
+            "names from the history, newest wins: " + names);
+        List<HomeRows.Item> named = HomeRows.commands(true, Arrays.asList("HDMI 1", "HDMI 2", "HDMI 3", "HDMI 4", "Live TV"),
+            "HDMI 3", names);
+        check(keys(named).equals(Arrays.asList("cmd:home", "cmd:settings", "cmd:quick", "input:HDMI 1")),
+            "only inputs the TV has shown lately, never the Shield's: " + keys(named));
+        check(named.get(3).title.equals("Switch to PS5 Game Console") && named.get(3).target.equals("input:HDMI 1"),
+            "the TV's own name on the card, the select option in the command");
+        check(HomeRows.inputNames(Arrays.asList("Live TV")).containsKey("live tv"), "Live TV counts once seen");
     }
 
     private static void inputs() {
