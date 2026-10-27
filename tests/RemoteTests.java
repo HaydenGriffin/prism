@@ -53,6 +53,7 @@ public final class RemoteTests {
         routeFreshness();
         keyQueue();
         remotePolicy();
+        afterLaunch();
         routeStatus();
         heartbeat();
         tvCue();
@@ -288,6 +289,13 @@ public final class RemoteTests {
         check(keys.admit("right", false, 800) != 0, "fresh tap recovers");
         keys.clear();
         check(keys.pending() == 0, "disable clears queue");
+    }
+
+    private static void afterLaunch() {
+        check(AfterLaunch.step(true, false) == AfterLaunch.Step.STAY, "Prism stays open behind what it opened by default");
+        check(AfterLaunch.step(true, true) == AfterLaunch.Step.CLOSE, "Prism closes after opening when Setup says so");
+        check(AfterLaunch.step(false, true) == AfterLaunch.Step.NOT_FOLLOWING, "without Follow the TV, Prism stays and says so");
+        check(AfterLaunch.step(false, false) == AfterLaunch.Step.NOT_FOLLOWING, "without Follow the TV, closing is never chosen");
     }
 
     private static void remotePolicy() {

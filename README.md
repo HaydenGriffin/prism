@@ -89,7 +89,7 @@ Download `prism-<version>.apk` from [Releases](../../releases) and sideload it:
 
 ```bash
 adb connect <box address>
-adb install prism-1.0.0.apk
+adb install prism-1.0.1.apk
 ```
 
 Or copy the APK to the box and open it with a file manager. To get updates automatically, add this repository to
@@ -117,6 +117,9 @@ Open Prism on the box. Setup is one list; work down it.
 
    Setup shows "Off · needs adb" until it's done.
 6. **Follow the TV.** Turn it on, and the remote follows whatever the TV shows.
+
+Prism stays open behind whatever it opens on the LG, so it is still there under LG Settings and other LG menus
+that cover only part of the screen. To have it close instead, turn on **Close after opening on the LG**.
 
 `tools/configure.py` can send the address and token from a computer over adb instead of typing the token with the
 remote. It needs a debug build (`--help` for details).
