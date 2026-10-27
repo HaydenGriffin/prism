@@ -7,3 +7,7 @@ repository's Settings → Social preview.
 NVIDIA Shield (`adb exec-out screencap -p > launcher.png`): the launcher, Quick TV settings, and Projectivy's home
 screen with the "LG apps" row. Use made-up favourites and no real Home Assistant address, and keep the Home
 Assistant page (it blocks screenshots anyway) out of them.
+
+`tv/` holds screenshots the LG took of itself, so they show its own menus over the box: `tv/lg-settings.jpg` is LG
+Settings opened from Prism's launcher. They come from webOS's capture service on a rooted LG (see `tools/hero.py`);
+the hero's TV shows `tv/lg-settings.jpg`.

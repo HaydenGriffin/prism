@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/hero.png" alt="Prism on an NVIDIA Shield: the launcher with Continue on the LG, favourite LG apps and recently used apps, beside Quick TV settings and the LG apps row in Projectivy" width="100%">
+  <img src="docs/images/hero.png" alt="Prism on an NVIDIA Shield, captured by the TV: LG Settings open over the Prism launcher, driven by the Shield remote, beside Quick TV settings and the LG apps row in Projectivy" width="100%">
 </p>
 
 # Prism
@@ -14,9 +14,8 @@ without picking up the LG remote.
 **On a PS5?** [Prism for PS5](https://github.com/HaydenGriffin/prism-ps5) is the same remote and launcher as a
 homebrew title for a jailbroken PS5: the DualSense drives the LG while an LG app is on screen.
 
-> **Status:** an earlier private build of this app runs every day on an NVIDIA Shield with a rooted 2021 LG C1.
-> Version 1.0.0 (the new package name, the Remotes page and opt-in monitoring) has only run in the host tests so
-> far. Reports either way are very welcome.
+> **Status:** version 1.0.1 runs on an NVIDIA Shield with a rooted 2021 LG C1, where the pictures below were taken.
+> Other boxes and TVs haven't been tried yet, so reports either way are very welcome.
 
 ## What it does
 
@@ -37,7 +36,10 @@ homebrew title for a jailbroken PS5: the DualSense drives the LG while an LG app
 
 ## Screenshots
 
-From an NVIDIA Shield with a 2021 LG C1.
+From an NVIDIA Shield with a 2021 LG C1. First, a screenshot the TV took of itself: LG Settings, opened from
+Prism's launcher, over Prism.
+
+<img src="docs/images/tv/lg-settings.jpg" alt="LG Settings on the General page, open over the Prism launcher on the Shield, with the LG Settings tile still focused underneath" width="100%">
 
 | The launcher | Quick TV settings |
 |---|---|
@@ -193,7 +195,8 @@ python3 tools/build.py --release    # build/prism-<version>.apk, not debuggable,
 Keystores are git-ignored; never commit one.
 
 Other tools: `tests/emulator_smoke.py` runs the APK on an Android emulator against a fake Home Assistant;
-`tools/hero.py` draws the README hero and screenshots from screenshots taken on the box;
+`tools/hero.py` draws the README hero and screenshots from screenshots taken on the box and one the TV took of
+itself;
 `tools/brand.py` draws the launcher icon, TV banner and social preview from the SVGs in
 [`docs/brand/`](docs/brand) (written by `tools/brand_svg.py`; usage notes in its README); `tools/icons.mjs`
 regenerates the icons from Material Design Icons; `tools/fonts.py` regenerates `res/font` from the variable fonts.

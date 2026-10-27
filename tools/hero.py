@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Draw the README hero and the README screenshots from real screenshots of the app on an Android TV box.
 
-    docs/images/hero.png                         3200 × 1640: the launcher on a TV, Quick TV settings and the
-                                                 "LG apps" row beside it, with the lockup and tagline
+    docs/images/hero.png                         3200 × 1640: LG Settings over the launcher on a TV, Quick TV
+                                                 settings and the "LG apps" row beside it, with the lockup and
+                                                 tagline
     docs/images/screenshots/launcher.png         the launcher
     docs/images/screenshots/quick-settings.png   Quick TV settings
     docs/images/screenshots/home-rows.png        the "LG apps" row in Projectivy, cropped to the row
@@ -11,6 +12,13 @@ The screenshots are 1920 × 1080 PNGs taken on the box with `adb exec-out screen
 
     pip install pillow
     python3 tools/hero.py SCREENS_DIR    # holds launcher.png, quick.png and rows.png
+
+The TV on the hero shows docs/images/tv/lg-settings.jpg, a screenshot the LG took of itself while LG Settings was
+open over Prism on the box. On a rooted LG, webOS's capture service saves whatever is on screen, the box's input
+included:
+
+    luna-send -n 1 luna://com.webos.service.capture/executeOneShot \\
+        '{"path": "/tmp/capture.jpg", "method": "DISPLAY", "width": 1920, "height": 1080, "format": "JPEG"}'
 """
 import argparse
 from pathlib import Path
@@ -20,6 +28,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from brand import BRAND, ROOT, hex_rgb, render, save_png
 
 OUT = ROOT / 'docs' / 'images'
+TV = OUT / 'tv'
 FONTS = ROOT / 'res' / 'font'
 
 NIGHT = hex_rgb('#0e0f12')
@@ -155,7 +164,7 @@ def captioned_panel(canvas, image, label, left, bottom, width):
     return top - 26 - 30
 
 
-def hero(launcher, quick, rows):
+def hero(settings, quick, rows):
     canvas = Image.new('RGB', (WIDTH, HEIGHT), NIGHT)
     glow(canvas, (2100, 820), 1100, SKY, 0.07)
     glow(canvas, (420, 1400), 700, AMBER, 0.045)
@@ -165,7 +174,9 @@ def hero(launcher, quick, rows):
     screen_w = WIDTH - 2 * MARGIN - column_w - gap - 36
     screen_h = round(screen_w * 9 / 16)
     top = (HEIGHT - screen_h) // 2 - 10
-    tv(canvas, launcher, MARGIN + column_w + gap + 18, top, screen_w)
+    screen_left = MARGIN + column_w + gap + 18
+    tv(canvas, settings, screen_left, top, screen_w)
+    caption(canvas, 'LG Settings over Prism, driven by the Shield remote', screen_left - 14, top - 50)
 
     below_text = text_column(canvas, MARGIN, top - 18, column_w)
     bottom = top + screen_h + 18
@@ -182,8 +193,9 @@ def main():
     launcher = Image.open(args.screens / 'launcher.png').convert('RGB')
     quick = Image.open(args.screens / 'quick.png').convert('RGB')
     rows = Image.open(args.screens / 'rows.png').convert('RGB')
+    settings = Image.open(TV / 'lg-settings.jpg').convert('RGB')
 
-    save_png(hero(launcher, quick.crop(QUICK_CROP), rows.crop(ROWS_HERO_CROP)), OUT / 'hero.png')
+    save_png(hero(settings, quick.crop(QUICK_CROP), rows.crop(ROWS_HERO_CROP)), OUT / 'hero.png')
     shots = OUT / 'screenshots'
     save_png(launcher, shots / 'launcher.png')
     save_png(quick, shots / 'quick-settings.png')
