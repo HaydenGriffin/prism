@@ -11,6 +11,9 @@ own input is on screen, the keys stay with the box as usual.
 Prism is also a launcher for the LG, so you can open LG apps, LG Home, LG Settings and a few common TV settings
 without picking up the LG remote.
 
+**On a PS5?** [Prism for PS5](https://github.com/HaydenGriffin/prism-ps5) is the same remote and launcher as a
+homebrew title for a jailbroken PS5: the DualSense drives the LG while an LG app is on screen.
+
 > **Status:** an earlier private build of this app runs every day on an NVIDIA Shield with a rooted 2021 LG C1.
 > Version 1.0.0 (the new package name, the Remotes page and opt-in monitoring) has only run in the host tests so
 > far. Reports either way are very welcome.
