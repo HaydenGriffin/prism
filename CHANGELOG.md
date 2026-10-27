@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.0.1
 
+- Prism stays open behind what it opens on the LG, so LG Settings and other LG menus that cover part of the screen
+  appear over Prism instead of the box's home screen. Setup → **Close after opening on the LG** brings back the old
+  behaviour, where Prism closes once the TV shows what it opened.
 - New logo: a P whose counter is a prism, its bowl split into a sky arm (the LG) and an amber arm (the box).
   Adaptive launcher icon with a themed-icon layer, a new TV banner and a GitHub social preview
   ([`docs/brand/`](docs/brand)).

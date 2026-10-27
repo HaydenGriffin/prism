@@ -30,6 +30,8 @@ final class SetupScreen {
         Credentials c = host.credentials();
         boolean enabled = AutomaticService.enabled(activity);
         s.listRow(R.drawable.ic_remote, "Follow the TV", enabled ? "On" : "Off", false, this::toggleFollow).setTag("follow");
+        s.listRow(R.drawable.ic_tv, "Close after opening on the LG", MainActivity.closesAfterOpening(activity) ? "On" : "Off",
+            false, this::toggleClose).setTag("close");
         s.listRow(R.drawable.ic_permission, "Remote permission", AutomaticService.live != null ? "Allowed" : "Not allowed", true,
             () -> host.show(Host.Page.PERMISSION)).setTag("permission");
         s.listRow(R.drawable.ic_remote, "Remotes", RemotesScreen.summary(activity), true,
@@ -60,6 +62,11 @@ final class SetupScreen {
         AutomaticService.enabled(activity, on);
         if (on && AutomaticService.live == null) host.show(Host.Page.PERMISSION);
         else open("follow");
+    }
+
+    private void toggleClose() {
+        MainActivity.closesAfterOpening(activity, !MainActivity.closesAfterOpening(activity));
+        open("close");
     }
 
     void permission() {

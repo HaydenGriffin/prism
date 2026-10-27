@@ -309,11 +309,25 @@ public final class MainActivity extends Activity implements Host {
         }
     }
 
-    /** The TV now shows the LG app; when the remote follows it there, this screen gets out of the way. */
+    /** The TV now shows what was opened. Prism stays behind it unless Setup says to close. */
     private void leaveForTv() {
-        if (AutomaticService.enabled(this) && AutomaticService.live != null) finish();
-        else screen.status("Opened on the LG · turn on Follow the TV in Setup for the remote to follow", Status.Tone.WARN);
+        boolean following = AutomaticService.enabled(this) && AutomaticService.live != null;
+        switch (AfterLaunch.step(following, closesAfterOpening(this))) {
+            case CLOSE:
+                finish();
+                break;
+            case STAY:
+                screen.status("Opened on the LG · the remote follows it there", Status.Tone.SKY);
+                break;
+            default:
+                screen.status("Opened on the LG · turn on Follow the TV in Setup for the remote to follow", Status.Tone.WARN);
+        }
     }
+
+    /** Setup's "Close after opening on the LG": off unless chosen. */
+    static boolean closesAfterOpening(Context c) { return launcherPrefs(c).getBoolean("close_after_opening", false); }
+
+    static void closesAfterOpening(Context c, boolean on) { launcherPrefs(c).edit().putBoolean("close_after_opening", on).apply(); }
 
     private String titleFor(Apps.App app) {
         Apps.App known = Apps.find(catalog, app.id);
