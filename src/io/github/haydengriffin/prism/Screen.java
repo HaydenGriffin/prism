@@ -326,7 +326,7 @@ final class Screen {
         t.setPadding(0, 0, 0, dp(12));
         t.setMaxWidth(dp(640)); // a readable measure
         t.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        content.addView(t);
+        content.addView(t, new LinearLayout.LayoutParams(-2, -2)); // wrapping, so the measure above applies
         return t;
     }
 
@@ -547,9 +547,9 @@ final class Screen {
         if (marked) {
             ImageView star = icon(R.drawable.ic_star, R.color.accent_ink, 20);
             star.setBackground(oval(color(R.color.accent)));
-            star.setPadding(dp(5), dp(5), dp(5), dp(5));
-            FrameLayout.LayoutParams sp = new FrameLayout.LayoutParams(dp(30), dp(30), Gravity.TOP | Gravity.END);
-            sp.setMargins(0, dp(8), dp(8), 0);
+            star.setPadding(dp(4), dp(4), dp(4), dp(4));
+            FrameLayout.LayoutParams sp = new FrameLayout.LayoutParams(dp(22), dp(22), Gravity.TOP | Gravity.END);
+            sp.setMargins(0, dp(6), dp(6), 0);
             tile.addView(star, sp);
         }
         tile.setContentDescription(app.title + (marked ? ", favourite" : ""));

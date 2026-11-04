@@ -12,7 +12,7 @@ import java.util.List;
 final class AppsScreen {
     static final int COLUMNS = 6;
     private static final int TILE = 94;
-    private static final Screen.TileSize SIZE = new Screen.TileSize(44, 14, 4);
+    private static final Screen.TileSize SIZE = new Screen.TileSize(40, 14, 10);
     private final Host host;
 
     AppsScreen(Host host) { this.host = host; }
