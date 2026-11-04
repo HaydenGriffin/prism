@@ -187,6 +187,10 @@ public final class UiTests {
         v.move(-1);
         check(!v.changed() && v.text().equals("SHIELD"), "back to the box: nothing to send");
         check(v.move(-1).equals("HDMI 2"), "Left steps back; the option, not the label, is what gets sent");
+        TvSettings.Value renamed = new TvSettings.Value(row, "SHIELD Game Console (HDMI3)",
+            Arrays.asList("HDMI 1", "SHIELD Game Console (HDMI3)", "PlayStation (HDMI1)"), 0, 0).named("HDMI 3", "SHIELD");
+        check(renamed.text().equals("SHIELD"), "the box's input reads its name whatever the LG calls that port");
+        check(renamed.move(1).equals("PlayStation (HDMI1)") && renamed.text().equals("PlayStation (HDMI1)"), "another port keeps its own name");
     }
 
     private static void settings() {

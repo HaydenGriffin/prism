@@ -622,7 +622,9 @@ final class Screen {
         if (numeric) v.setTypeface(numeralsBold);
         v.setTag("value");
         v.setMinWidth(dp(132));
+        v.setMaxWidth(dp(170)); // a long input name gives way before the row's label does
         v.setMaxLines(1);
+        v.setEllipsize(TextUtils.TruncateAt.END);
         v.setGravity(Gravity.CENTER);
         stepper.addView(v);
         stepper.addView(icon(R.drawable.ic_chevron, R.color.muted, 22), new LinearLayout.LayoutParams(dp(22), dp(22)));

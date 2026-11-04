@@ -49,15 +49,29 @@ final class TvSettings {
             return shown;
         }
         boolean changed() { return !shown.equals(confirmed); }
-        String text() { return names.containsKey(shown) ? names.get(shown) : display(shown); }
+        String text() {
+            if (names.containsKey(shown)) return names.get(shown);
+            String port = hdmiPort(shown);
+            return port != null && names.containsKey(port) ? names.get(port) : display(shown);
+        }
+        /** An LG may call the same input "HDMI 3" or "SHIELD Game Console (HDMI3)", so its port names it too. */
         Value named(String choice, String label) {
-            if (choice != null && !choice.isEmpty()) names.put(choice, label);
+            if (choice == null || choice.isEmpty()) return this;
+            names.put(choice, label);
+            String port = hdmiPort(choice);
+            if (port != null) names.put(port, label);
             return this;
         }
         private static int number(String value) {
             try { return (int) Math.round(Double.parseDouble(value)); } catch (NumberFormatException e) { return 0; }
         }
     }
+    /** The port an input's name gives, such as "hdmi3" for "SHIELD Game Console (HDMI3)", or null. */
+    static String hdmiPort(String option) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("hdmi\\s*(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(option);
+        return m.find() ? "hdmi" + m.group(1) : null;
+    }
+
     static final int NUMBER_STEP = 5;
     private static final List<String> EXCLUDED = Arrays.asList("screen_off");
     private TvSettings() {}
