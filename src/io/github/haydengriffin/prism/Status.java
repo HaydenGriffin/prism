@@ -16,6 +16,11 @@ final class Status {
         this.needsAction = needsAction;
     }
 
+    /** Whether the launcher's fix-this row would read the same for the other status. */
+    boolean sameFixRow(Status other) {
+        return needsAction == other.needsAction && (!needsAction || text.equals(other.text));
+    }
+
     /** Before the saved setup has been read: neutral, never "Finish setup". */
     static Status starting() {
         return new Status("Prism", Status.Tone.QUIET, false);

@@ -60,7 +60,7 @@ public final class MainActivity extends Activity implements Host {
             Status now = status();
             say(now);
             // The launcher's "fix this" row comes and goes with the status; the focus stays where it was.
-            if (page == Page.LAUNCHER && shown != null && shown.needsAction != now.needsAction) launcher.redraw();
+            if (page == Page.LAUNCHER && shown != null && !shown.sameFixRow(now)) launcher.redraw();
             shown = now;
             main.postDelayed(this, 500);
         }

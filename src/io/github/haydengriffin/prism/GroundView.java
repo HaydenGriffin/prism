@@ -32,7 +32,12 @@ final class GroundView extends View {
     void follow(View focused, int rgb) {
         if (!theme.washes) return;
         if (!isLaidOut() || !focused.isLaidOut()) { // Focus lands before a new page's first layout: measure after it.
-            focused.post(() -> { if (focused.hasFocus()) follow(focused, rgb); });
+            focused.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+                @Override public void onLayoutChange(View v, int l, int t, int r, int b, int ol, int ot, int or, int ob) {
+                    v.removeOnLayoutChangeListener(this);
+                    v.post(() -> { if (v.hasFocus()) follow(v, rgb); });
+                }
+            });
             return;
         }
         getLocationInWindow(self);

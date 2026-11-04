@@ -229,5 +229,10 @@ public final class UiTests {
         check(failing.tone == Status.Tone.ALERT && failing.text.equals("Home Assistant refused the token"),
             "errors say the failing step");
         check(failing.needsAction, "a failure gets the launcher's fix-this row");
+        Status blocked = Status.of(true, true, false, lg, BOX), off = Status.of(true, false, true, lg, BOX);
+        check(!blocked.sameFixRow(off), "one fix-this row turning into another redraws it");
+        check(off.sameFixRow(Status.of(true, false, false, lg, BOX)), "the same row needs no redraw");
+        check(Status.of(true, true, true, lg, BOX).sameFixRow(Status.of(true, true, true, new RemoteState(RemoteState.Mode.TV_OFF, ""), BOX)),
+            "with no fix-this row, the status line alone changes");
     }
 }
