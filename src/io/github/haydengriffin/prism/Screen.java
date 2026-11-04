@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.text.SpannableString;
@@ -23,36 +24,80 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
- * The look: a solid night ground, panel tiles, sky focus ring with a small lift, Atkinson words and
- * Lexend numerals. Sizes are for the Shield's 960×540 dp screen read from the sofa.
+ * The look, in the colours of the active Theme: panel tiles over the theme's ground, a focus ring with a small lift,
+ * Atkinson words and Lexend numerals. Sizes are for the Shield's 960×540 dp screen read from the sofa.
  */
 final class Screen {
     /** Overscan-safe margins for a TV. */
-    static final int EDGE_X = 48, EDGE_Y = 28, GAP = 14;
+    static final int EDGE_X = 48, EDGE_Y = LauncherLayout.EDGE, GAP = LauncherLayout.GAP;
+    private static final int ROW = 50, ROW_GAP = 6, SHEET_WIDTH = 480;
+    private static final float TILE_LIFT = 1.045f, BIG_LIFT = 1.02f;
+    /** Light letters for a dark app colour, whatever the theme. */
+    private static final int LETTER = 0xFFF4F2EE;
     private final Activity activity;
     private final Typeface words, wordsBold, numerals, numeralsBold;
+    private Theme theme;
+    private GroundView ground;
+    private FrameLayout root;
+    private ScrollView scroll;
     LinearLayout content;
     private TextView status;
+    private Status.Tone statusTone;
     private View statusDot;
+    private BeamView beam;
     private TextView subtitle;
-    private LinearLayout header;
+    private LinearLayout[] columns;
+    private int nextColumn;
+    /** While the sheet is up, what to slide away with the next frame. */
+    private FrameLayout sheet;
+    private View scrim;
 
-    Screen(Activity activity) {
+    Screen(Activity activity, Theme theme) {
         this.activity = activity;
         words = activity.getResources().getFont(R.font.atkinson_regular);
         wordsBold = activity.getResources().getFont(R.font.atkinson_semibold);
         numerals = activity.getResources().getFont(R.font.lexend_regular);
         numeralsBold = activity.getResources().getFont(R.font.lexend_semibold);
+        theme(theme);
+    }
+
+    Theme theme() { return theme; }
+
+    /** Changes the look; pages drawn from now on wear it. */
+    void theme(Theme next) {
+        theme = next;
+        ground = new GroundView(activity, next);
+        activity.getWindow().setBackgroundDrawable(new ColorDrawable(next.groundTop));
     }
 
     int dp(float n) { return Math.round(n * activity.getResources().getDisplayMetrics().density); }
-    int color(int id) { return activity.getResources().getColor(id, activity.getTheme()); }
 
-    /** A new page: title and subtitle on the left, the live status on the right. */
-    void page(String title, String sub) {
-        ScrollView scroll = new ScrollView(activity);
+    /** A colour token in the active theme. */
+    int color(int id) {
+        if (id == R.color.surface) return theme.groundTop;
+        if (id == R.color.panel) return theme.panel;
+        if (id == R.color.raised) return theme.raised;
+        if (id == R.color.text) return theme.text;
+        if (id == R.color.muted) return theme.muted;
+        if (id == R.color.accent) return theme.accent;
+        if (id == R.color.accent_ink) return theme.accentInk;
+        if (id == R.color.warn) return theme.warn;
+        if (id == R.color.error) return theme.error;
+        return activity.getResources().getColor(id, activity.getTheme());
+    }
+
+    /** A clean frame: the ground, and an empty scrolling column that only scrolls when a page outgrows the screen. */
+    private void frame() {
+        FrameLayout leaving = sheet;
+        View fading = scrim;
+        root = new FrameLayout(activity);
+        if (ground.getParent() != null) ((ViewGroup) ground.getParent()).removeView(ground);
+        root.addView(ground, new FrameLayout.LayoutParams(-1, -1));
+        scroll = new ScrollView(activity);
         scroll.setFillViewport(true);
         scroll.setVerticalScrollBarEnabled(false);
+        scroll.setVerticalFadingEdgeEnabled(true);
+        scroll.setFadingEdgeLength(dp(28));
         scroll.setClipToPadding(false);
         content = new LinearLayout(activity);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -60,16 +105,46 @@ final class Screen {
         content.setClipChildren(false);
         content.setClipToPadding(false);
         scroll.addView(content);
-        activity.setContentView(scroll);
+        root.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
+        activity.setContentView(root);
+        status = null;
+        statusTone = null;
+        statusDot = null;
+        beam = null;
+        subtitle = null;
+        columns = null;
+        sheet = null;
+        scrim = null;
+        if (leaving != null) slideAway(leaving, fading);
+    }
 
-        header = new LinearLayout(activity);
-        header.setTag(HEADER);
+    /** The sheet over the page drawn under it: it goes on sliding while the page below is already fresh. */
+    private void slideAway(FrameLayout leaving, View fading) {
+        ((ViewGroup) fading.getParent()).removeView(fading);
+        ((ViewGroup) leaving.getParent()).removeView(leaving);
+        leaving.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        leaving.setFocusable(false);
+        FrameLayout under = root;
+        under.addView(fading, new FrameLayout.LayoutParams(-1, -1));
+        under.addView(leaving, new FrameLayout.LayoutParams(dp(SHEET_WIDTH), -1, Gravity.END));
+        fading.animate().alpha(0).setDuration(160).start();
+        leaving.animate().translationX(dp(SHEET_WIDTH)).setDuration(160).setInterpolator(new DecelerateInterpolator())
+            .withEndAction(() -> {
+                under.removeView(leaving);
+                under.removeView(fading);
+            }).start();
+    }
+
+    /** A new page: title and subtitle on the left, the live status on the right. */
+    void page(String title, String sub) {
+        frame();
+        LinearLayout header = new LinearLayout(activity);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(0, 0, 0, dp(10));
+        header.setPadding(0, 0, 0, dp(8));
         LinearLayout titles = new LinearLayout(activity);
         titles.setOrientation(LinearLayout.VERTICAL);
-        titles.addView(text(title, 30, R.color.text, true));
-        subtitle = text(sub == null ? "" : sub, 17, R.color.muted, false);
+        titles.addView(text(title, 26, R.color.text, true));
+        subtitle = text(sub == null ? "" : sub, 16, R.color.muted, false);
         subtitle.setVisibility(sub == null || sub.isEmpty() ? View.GONE : View.VISIBLE);
         titles.addView(subtitle);
         header.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
@@ -78,7 +153,7 @@ final class Screen {
         live.setGravity(Gravity.CENTER_VERTICAL);
         statusDot = new View(activity);
         live.addView(statusDot, new LinearLayout.LayoutParams(dp(12), dp(12)));
-        status = text("", 19, R.color.text, true);
+        status = text("", 18, R.color.text, true);
         status.setPadding(dp(10), 0, 0, 0);
         status.setMaxLines(1);
         status.setEllipsize(TextUtils.TruncateAt.END);
@@ -88,39 +163,109 @@ final class Screen {
         content.addView(header);
     }
 
-    /** Tag of the page header: initial focus skips it (its icon button is reached with Up). */
-    static final String HEADER = "header";
-
-    /** A small round icon button at the header's end, after the live line (Setup on the launcher). */
-    ImageView headerButton(int iconRes, String description, Runnable action) {
-        ImageView b = icon(iconRes, R.color.text, 22);
-        b.setBackground(oval(color(R.color.raised)));
-        b.setPadding(dp(11), dp(11), dp(11), dp(11));
-        b.setContentDescription(description);
-        focusable(b, 999, action);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(44), dp(44));
-        lp.setMarginStart(dp(20));
-        header.addView(b, lp);
-        return b;
+    /** The launcher's page: no header, so the deck has the screen; statusLine() goes at its foot. */
+    void deckPage() {
+        frame();
     }
 
-    /** The live line. Dot style carries meaning with the words, never alone. */
+    /** The one line of chrome under the deck: the beam, where the remote goes in words, and which TV this is. */
+    void statusLine(String box, String where) {
+        View push = new View(activity);
+        content.addView(push, new LinearLayout.LayoutParams(1, 0, 1));
+        LinearLayout line = new LinearLayout(activity);
+        line.setGravity(Gravity.CENTER_VERTICAL);
+        TextView from = text(box, 15, R.color.text, true);
+        from.setTextColor(theme.amber);
+        line.addView(from);
+        beam = new BeamView(activity, theme.amber, theme.sky, theme.text, theme.groundTop);
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(dp(96), dp(20));
+        bp.setMarginStart(dp(8));
+        bp.setMarginEnd(dp(8));
+        line.addView(beam, bp);
+        TextView to = text("LG", 15, R.color.text, true);
+        to.setTextColor(theme.sky);
+        line.addView(to);
+        status = text("", 17, R.color.text, true);
+        status.setMaxLines(1);
+        status.setEllipsize(TextUtils.TruncateAt.END);
+        status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(0, -2, 1);
+        sp.setMarginStart(dp(18));
+        line.addView(status, sp);
+        TextView place = text(where, 16, R.color.muted, false);
+        place.setMaxLines(1);
+        place.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(-2, -2);
+        pp.setMarginStart(dp(18));
+        line.addView(place, pp);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(LauncherLayout.STATUS));
+        lp.topMargin = dp(GAP);
+        content.addView(line, lp);
+    }
+
+    /** The live line. The dot and beam carry meaning with the words, never alone. */
     void status(String text, Status.Tone tone) {
         if (status == null) return;
-        if (!status.getText().toString().equals(text)) status.setText(text);
-        GradientDrawable dot = new GradientDrawable();
-        dot.setShape(GradientDrawable.OVAL);
-        int c = color(tone == Status.Tone.SKY ? R.color.accent : tone == Status.Tone.WARN ? R.color.warn
-            : tone == Status.Tone.ALERT ? R.color.error : tone == Status.Tone.NEUTRAL ? R.color.text : R.color.muted);
-        if (tone == Status.Tone.WARN || tone == Status.Tone.QUIET) dot.setStroke(dp(2), c); // outlined: needs a look, or idle
-        else dot.setColor(c);
-        statusDot.setBackground(dot);
+        // Called twice a second: with nothing new to say, the page must not redraw (or stop being idle).
+        if (tone == statusTone && status.getText().toString().equals(text)) return;
+        statusTone = tone;
+        status.setText(text);
+        if (beam != null) beam.show(tone == Status.Tone.SKY ? BeamView.End.LG : tone == Status.Tone.NEUTRAL ? BeamView.End.BOX : BeamView.End.NONE);
+        if (statusDot != null) {
+            GradientDrawable dot = new GradientDrawable();
+            dot.setShape(GradientDrawable.OVAL);
+            int c = tone == Status.Tone.SKY ? theme.sky : color(tone == Status.Tone.WARN ? R.color.warn
+                : tone == Status.Tone.ALERT ? R.color.error : tone == Status.Tone.NEUTRAL ? R.color.text : R.color.muted);
+            if (tone == Status.Tone.WARN || tone == Status.Tone.QUIET) dot.setStroke(dp(2), c); // outlined: needs a look, or idle
+            else dot.setColor(c);
+            statusDot.setBackground(dot);
+        }
         status.setTextColor(color(tone == Status.Tone.ALERT ? R.color.error : tone == Status.Tone.QUIET ? R.color.muted : R.color.text));
     }
 
-    void subtitle(String text) {
-        subtitle.setText(text);
-        subtitle.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
+    /** The tag of whatever has the focus, to put it back after a redraw. */
+    String focusedTag() {
+        View focused = content.findFocus();
+        return focused == null || focused.getTag() == null ? null : focused.getTag().toString();
+    }
+
+    /**
+     * A sheet from the right over the page, for settings you want to see working: the page stays lit behind it and
+     * cannot take the focus. Rows added to `content` go in the sheet, until the next page is drawn and it slides away.
+     */
+    void openSheet(String title) {
+        scrim = new View(activity);
+        scrim.setBackgroundColor(0x59000000);
+        root.addView(scrim, new FrameLayout.LayoutParams(-1, -1));
+        sheet = new FrameLayout(activity);
+        GradientDrawable plate = new GradientDrawable();
+        plate.setColor(theme.sheet);
+        float round = dp(28);
+        plate.setCornerRadii(new float[] { round, round, 0, 0, 0, 0, round, round });
+        sheet.setBackground(plate);
+        sheet.setClipChildren(false);
+        sheet.setFocusable(true); // holds the focus until its rows arrive, so OK cannot reach the page
+        content = new LinearLayout(activity);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(24), dp(24), dp(EDGE_X), dp(16));
+        content.setClipChildren(false);
+        content.setClipToPadding(false);
+        sheet.addView(content, new FrameLayout.LayoutParams(-1, -1));
+        TextView heading = text(title, 24, R.color.text, true);
+        heading.setPadding(0, 0, 0, dp(8));
+        content.addView(heading);
+        root.addView(sheet, new FrameLayout.LayoutParams(dp(SHEET_WIDTH), -1, Gravity.END));
+        sheet.requestFocus();
+        scroll.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        scrim.setAlpha(0);
+        scrim.animate().alpha(1).setDuration(200).start();
+        sheet.setTranslationX(dp(SHEET_WIDTH));
+        sheet.animate().translationX(0).setDuration(240).setInterpolator(new DecelerateInterpolator(2.5f)).start();
+    }
+
+    /** The sheet's rows are up and one has the focus: the sheet itself stops being a place to land. */
+    void sheetReady() {
+        if (sheet != null) sheet.setFocusable(false);
     }
 
     /**
@@ -175,15 +320,7 @@ final class Screen {
         return t;
     }
 
-    /** A section label: sentence case, muted, more space above than below. */
-    void section(String label) {
-        TextView t = text(label, 17, R.color.muted, false);
-        t.setPadding(dp(2), dp(4), 0, dp(7));
-        content.addView(t);
-    }
-
-    /** A line of explanation or a message inside the page (not the live status). */
-    /** A message line in the page; hidden while empty so it takes no room. */
+    /** A message line in the page (not the live status); hidden while empty so it takes no room. */
     TextView note(String value, boolean error) {
         TextView t = new Words(activity, numerals, numeralsBold) {
             @Override public void setText(CharSequence text, BufferType type) {
@@ -201,91 +338,183 @@ final class Screen {
         return t;
     }
 
-    /** A row of equal tiles; add tiles with tile(). Empty slots keep the grid's columns steady. */
-    LinearLayout grid(int columns, float heightDp, int count) {
+    /** A row of equal tiles. Empty slots keep the grid's columns steady. */
+    LinearLayout grid(int columns, float heightDp) {
+        return grid(content, columns, heightDp);
+    }
+
+    /** A row of equal tiles in a column of its own (the launcher's grid, beside the big tile). */
+    LinearLayout grid(ViewGroup parent, int columns, float heightDp) {
         LinearLayout row = new LinearLayout(activity);
         row.setClipChildren(false);
         row.setWeightSum(columns);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(heightDp));
         lp.bottomMargin = dp(GAP);
-        content.addView(row, lp);
+        parent.addView(row, lp);
         return row;
     }
 
-    /** A focusable tile: optional icon disc or app art, a label, an optional second line. */
-    FrameLayout tile(LinearLayout row, String label, String detail, int iconRes, Runnable action) {
+    /** The deck's row: the big tile on the left, and the column of grid rows this returns on its right. */
+    LinearLayout deckRow(float heightDp, java.util.function.Consumer<LinearLayout> bigTile) {
+        LinearLayout row = new LinearLayout(activity);
+        row.setClipChildren(false);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(heightDp));
+        lp.bottomMargin = dp(GAP);
+        content.addView(row, lp);
+        bigTile.accept(row);
+        LinearLayout column = new LinearLayout(activity);
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.setClipChildren(false);
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, -1, 1);
+        cp.setMarginStart(dp(GAP));
+        row.addView(column, cp);
+        return column;
+    }
+
+    private static final int BIG_TILE_WIDTH = 300;
+
+    /** The big tile: an app's art at its own size and colour, what pressing it does, and its name. */
+    FrameLayout bigAppTile(LinearLayout row, Apps.App app, String label, IconCache icons, Runnable action) {
+        FrameLayout tile = bigTile(row, action, appColor(app));
+        LinearLayout body = (LinearLayout) tile.getChildAt(0);
+        body.addView(chip(app, icons, 150, 72), 0, new LinearLayout.LayoutParams(dp(150), dp(150)));
+        bigWords(tile, body, label, app.title);
+        return tile;
+    }
+
+    /** The big tile with a glyph instead of an app, when there is no app to offer yet. */
+    FrameLayout bigGlyphTile(LinearLayout row, String title, String detail, int iconRes, Runnable action) {
+        FrameLayout tile = bigTile(row, action, 0);
+        LinearLayout body = (LinearLayout) tile.getChildAt(0);
+        body.addView(glyph(iconRes, 150), 0, new LinearLayout.LayoutParams(dp(150), dp(150)));
+        bigWords(tile, body, detail, title);
+        return tile;
+    }
+
+    private FrameLayout bigTile(LinearLayout row, Runnable action, int wash) {
+        FrameLayout tile = new FrameLayout(activity);
+        row.addView(tile, new LinearLayout.LayoutParams(dp(BIG_TILE_WIDTH), -1));
+        tile.setBackground(surface(R.color.panel, 24));
+        focusable(tile, 24, BIG_LIFT, wash, action);
+        LinearLayout body = new LinearLayout(activity);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(dp(24), dp(24), dp(24), dp(22));
+        tile.addView(body, new FrameLayout.LayoutParams(-1, -1));
+        return tile;
+    }
+
+    private void bigWords(FrameLayout tile, LinearLayout body, String small, String big) {
+        body.addView(new View(activity), new LinearLayout.LayoutParams(1, 0, 1));
+        TextView what = text(small, 18, R.color.muted, false);
+        what.setMaxLines(2);
+        what.setEllipsize(TextUtils.TruncateAt.END);
+        body.addView(what);
+        TextView name = text(big, 34, R.color.text, true);
+        name.setPadding(0, dp(4), 0, 0);
+        name.setMaxLines(2);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        body.addView(name);
+        tile.setContentDescription(small + ", " + big);
+    }
+
+    /** A dock tile: a line glyph and a word or two, for the TV's own places. */
+    FrameLayout dockTile(LinearLayout row, String label, int iconRes, Runnable action) {
         FrameLayout tile = new FrameLayout(activity);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -1, 1);
         if (row.getChildCount() > 0) lp.setMarginStart(dp(GAP));
         row.addView(tile, lp);
-        tile.setBackground(surface(R.color.panel, 22));
-        focusable(tile, 22, action);
-
+        tile.setBackground(surface(R.color.panel, 20));
+        focusable(tile, 20, TILE_LIFT, 0, action);
         LinearLayout body = new LinearLayout(activity);
-        body.setOrientation(LinearLayout.VERTICAL);
-        body.setPadding(dp(18), dp(14), dp(18), dp(14));
-        body.setGravity(Gravity.BOTTOM);
+        body.setGravity(Gravity.CENTER_VERTICAL);
+        body.setPadding(dp(16), 0, dp(10), 0);
         tile.addView(body, new FrameLayout.LayoutParams(-1, -1));
-        if (iconRes != 0) {
-            ImageView icon = icon(iconRes, R.color.text, 26);
-            FrameLayout.LayoutParams ip = new FrameLayout.LayoutParams(dp(26), dp(26), Gravity.TOP | Gravity.START);
-            ip.setMargins(dp(18), dp(16), 0, 0);
-            tile.addView(icon, ip);
-        }
-        TextView name = text(label, 19, R.color.text, true);
-        name.setMaxLines(2);
+        ImageView icon = icon(iconRes, R.color.text, 26);
+        body.addView(icon, new LinearLayout.LayoutParams(dp(26), dp(26)));
+        TextView name = text(label, 17, R.color.text, true);
+        name.setPadding(dp(12), 0, 0, 0);
+        name.setMaxLines(1);
         name.setEllipsize(TextUtils.TruncateAt.END);
         body.addView(name);
-        if (detail != null && !detail.isEmpty()) {
-            TextView second = text(detail, 16, R.color.muted, false);
-            second.setPadding(0, dp(4), 0, 0);
-            second.setMaxLines(1);
-            second.setEllipsize(TextUtils.TruncateAt.END);
-            body.addView(second);
-        }
-        tile.setContentDescription(detail == null ? label : label + ", " + detail);
+        tile.setContentDescription(label);
         return tile;
     }
 
-    /** A full-width tile: the app's art on its own colour at the start, one line of words after it. */
-    FrameLayout wideAppTile(LinearLayout row, Apps.App app, String label, IconCache icons, Runnable action) {
+    /** A grid tile for a place rather than an app (All apps, Choose favourites): a glyph where the app's art would be. */
+    FrameLayout glyphTile(LinearLayout row, String label, int iconRes, int chipDp, Runnable action) {
+        FrameLayout tile = gridTile(row, 0, action);
+        LinearLayout body = (LinearLayout) tile.getChildAt(0);
+        body.addView(glyph(iconRes, chipDp), new LinearLayout.LayoutParams(dp(chipDp), dp(chipDp)));
+        tileName(body, label, 2, 17);
+        tile.setContentDescription(label);
+        return tile;
+    }
+
+    private FrameLayout gridTile(LinearLayout row, int wash, Runnable action) {
         FrameLayout tile = new FrameLayout(activity);
-        row.addView(tile, new LinearLayout.LayoutParams(0, -1, 1));
-        tile.setBackground(surface(R.color.panel, 22));
-        focusable(tile, 22, action);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -1, 1);
+        if (row.getChildCount() > 0) lp.setMarginStart(dp(GAP));
+        row.addView(tile, lp);
+        tile.setBackground(surface(R.color.panel, 20));
+        focusable(tile, 20, TILE_LIFT, wash, action);
         LinearLayout body = new LinearLayout(activity);
-        body.setGravity(Gravity.CENTER_VERTICAL);
-        body.setPadding(dp(12), dp(12), dp(24), dp(12));
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setGravity(Gravity.CENTER);
+        body.setPadding(dp(8), dp(8), dp(8), dp(8));
         tile.addView(body, new FrameLayout.LayoutParams(-1, -1));
-        FrameLayout art = new FrameLayout(activity);
-        int ground = appColor(app);
-        art.setBackground(solid(ground, 16));
+        return tile;
+    }
+
+    private void tileName(LinearLayout body, String label, int lines, float sp) {
+        TextView name = text(label, sp, R.color.text, true);
+        name.setPadding(0, dp(6), 0, 0);
+        name.setMaxLines(lines);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        name.setGravity(Gravity.CENTER);
+        body.addView(name, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    /** A rounded square holding a line glyph, the same size as an app's art. */
+    private FrameLayout glyph(int iconRes, int sizeDp) {
+        FrameLayout chip = new FrameLayout(activity);
+        chip.setBackground(surface(R.color.raised, Math.round(sizeDp * 0.2f)));
+        int inner = Math.round(sizeDp * 0.5f);
+        ImageView icon = icon(iconRes, R.color.text, inner);
+        chip.addView(icon, new FrameLayout.LayoutParams(dp(inner), dp(inner), Gravity.CENTER));
+        return chip;
+    }
+
+    /** An app's art on the app's own colour; its initial until the icon arrives, or if it never does. */
+    private FrameLayout chip(Apps.App app, IconCache icons, int sizeDp, int letterSp) {
+        FrameLayout chip = new FrameLayout(activity);
+        int colour = appColor(app);
+        chip.setBackground(solid(colour, Math.round(sizeDp * 0.2f)));
         TextView letter = new TextView(activity);
         letter.setText(app.initial());
         letter.setTypeface(wordsBold);
-        letter.setTextSize(30);
-        letter.setTextColor(color(luminance(ground) > 0.45 ? R.color.ink : R.color.text));
+        letter.setTextSize(letterSp);
+        letter.setTextColor(Theme.luminance(Theme.over(colour, theme.groundTop)) > 0.45 ? color(R.color.ink) : LETTER);
         letter.setGravity(Gravity.CENTER);
-        art.addView(letter, new FrameLayout.LayoutParams(-1, -1));
+        chip.addView(letter, new FrameLayout.LayoutParams(-1, -1));
         if (app.icon != null) {
             ImageView picture = new ImageView(activity);
             picture.setScaleType(ImageView.ScaleType.FIT_CENTER);
             FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(-1, -1);
-            pp.setMargins(dp(8), dp(8), dp(8), dp(8));
-            art.addView(picture, pp);
+            int inset = dp(sizeDp * 0.08f);
+            pp.setMargins(inset, inset, inset, inset);
+            chip.addView(picture, pp);
+            int round = dp(sizeDp * 0.14f);
+            picture.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                @Override public void getOutline(View view, android.graphics.Outline outline) {
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), round);
+                }
+            });
+            picture.setClipToOutline(true);
             icons.show(app.id, app.icon, picture);
             picture.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) ->
                 letter.setVisibility(picture.getDrawable() == null ? View.VISIBLE : View.INVISIBLE));
         }
-        body.addView(art, new LinearLayout.LayoutParams(dp(72), -1));
-        TextView name = text(label, 21, R.color.text, true);
-        name.setMaxLines(1);
-        name.setEllipsize(TextUtils.TruncateAt.END);
-        LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(0, -2, 1);
-        np.setMarginStart(dp(18));
-        body.addView(name, np);
-        tile.setContentDescription(label);
-        return tile;
+        return chip;
     }
 
     /** A quiet line holding empty grid columns (an empty row's place), never focusable. */
@@ -302,50 +531,18 @@ final class Screen {
         return t;
     }
 
-    /** An app tile: the app's icon on its own LG colour, or its initial on a muted hue; title under it. */
-    FrameLayout appTile(LinearLayout row, Apps.App app, boolean marked, IconCache icons, Runnable action) {
-        FrameLayout tile = new FrameLayout(activity);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -1, 1);
-        if (row.getChildCount() > 0) lp.setMarginStart(dp(GAP));
-        row.addView(tile, lp);
-        int ground = appColor(app);
-        tile.setBackground(solid(ground, 22));
-        focusable(tile, 22, action);
-
-        TextView letter = new TextView(activity);
-        letter.setText(app.initial());
-        letter.setTypeface(wordsBold);
-        letter.setTextSize(40);
-        letter.setTextColor(color(R.color.text));
-        letter.setGravity(Gravity.CENTER);
-        tile.addView(letter, new FrameLayout.LayoutParams(-1, -1));
-        if (app.icon != null) {
-            ImageView art = new ImageView(activity);
-            art.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            FrameLayout.LayoutParams ap = new FrameLayout.LayoutParams(-1, -1);
-            ap.setMargins(dp(14), dp(12), dp(14), dp(34));
-            tile.addView(art, ap);
-            icons.show(app.id, app.icon, art);
-            art.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) ->
-                letter.setVisibility(art.getDrawable() == null ? View.VISIBLE : View.INVISIBLE));
-        }
-        boolean light = luminance(ground) > 0.45;
-        TextView name = text(app.title, 16, R.color.text, true);
-        name.setMaxLines(1);
-        name.setEllipsize(TextUtils.TruncateAt.END);
-        name.setGravity(Gravity.CENTER);
-        if (light) name.setTextColor(color(R.color.ink));
-        else name.setShadowLayer(dp(6), 0, dp(1), 0x99000000);
-        if (light) letter.setTextColor(color(R.color.ink));
-        FrameLayout.LayoutParams np = new FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM);
-        np.setMargins(dp(10), 0, dp(10), dp(10));
-        tile.addView(name, np);
+    /** An app tile: the app's art on its own LG colour, and its name under it. */
+    FrameLayout appTile(LinearLayout row, Apps.App app, boolean marked, IconCache icons, int chipDp, int lines, Runnable action) {
+        FrameLayout tile = gridTile(row, appColor(app), action);
+        LinearLayout body = (LinearLayout) tile.getChildAt(0);
+        body.addView(chip(app, icons, chipDp, Math.round(chipDp * 0.48f)), new LinearLayout.LayoutParams(dp(chipDp), dp(chipDp)));
+        tileName(body, app.title, lines, lines > 1 ? 17 : 15);
         if (marked) {
             ImageView star = icon(R.drawable.ic_star, R.color.accent_ink, 20);
             star.setBackground(oval(color(R.color.accent)));
             star.setPadding(dp(5), dp(5), dp(5), dp(5));
             FrameLayout.LayoutParams sp = new FrameLayout.LayoutParams(dp(30), dp(30), Gravity.TOP | Gravity.END);
-            sp.setMargins(0, dp(10), dp(10), 0);
+            sp.setMargins(0, dp(8), dp(8), 0);
             tile.addView(star, sp);
         }
         tile.setContentDescription(app.title + (marked ? ", favourite" : ""));
@@ -360,32 +557,58 @@ final class Screen {
         row.addView(v, lp);
     }
 
-    /** A full-width list row: icon disc, label, value on the right, chevron when it opens another page. */
+    /** Rows from here until endColumns() fill two columns, so a long list fits on one screen. */
+    void twoColumns() {
+        LinearLayout both = new LinearLayout(activity);
+        both.setClipChildren(false);
+        columns = new LinearLayout[2];
+        for (int i = 0; i < 2; i++) {
+            columns[i] = new LinearLayout(activity);
+            columns[i].setOrientation(LinearLayout.VERTICAL);
+            columns[i].setClipChildren(false);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1);
+            if (i == 1) lp.setMarginStart(dp(GAP));
+            both.addView(columns[i], lp);
+        }
+        nextColumn = 0;
+        content.addView(both);
+    }
+
+    void endColumns() { columns = null; }
+
+    /** A list row: icon disc, label, value on the right, chevron when it opens another page. */
     LinearLayout listRow(int iconRes, String label, String value, boolean opens, Runnable action) {
         LinearLayout row = new LinearLayout(activity);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(16), 0, dp(18), 0);
-        row.setBackground(surface(R.color.panel, 18));
-        focusable(row, 18, action);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(58));
-        lp.bottomMargin = dp(8);
-        content.addView(row, lp);
+        row.setPadding(dp(10), 0, dp(14), 0);
+        row.setBackground(surface(R.color.panel, 16));
+        focusable(row, 16, BIG_LIFT, null, action);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(ROW));
+        lp.bottomMargin = dp(ROW_GAP);
+        if (columns == null) content.addView(row, lp);
+        else columns[nextColumn++ % 2].addView(row, lp);
         if (iconRes != 0) {
-            ImageView icon = icon(iconRes, R.color.text, 22);
+            ImageView icon = icon(iconRes, R.color.text, 20);
             icon.setBackground(oval(color(R.color.raised)));
-            icon.setPadding(dp(9), dp(9), dp(9), dp(9));
-            LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(dp(40), dp(40));
-            ip.setMarginEnd(dp(14));
+            icon.setPadding(dp(8), dp(8), dp(8), dp(8));
+            LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(dp(36), dp(36));
+            ip.setMarginEnd(dp(12));
             row.addView(icon, ip);
         }
-        row.addView(text(label, 19, R.color.text, true), new LinearLayout.LayoutParams(0, -2, 1));
-        TextView v = text(value == null ? "" : value, 18, R.color.muted, false);
+        TextView name = text(label, 18, R.color.text, true);
+        name.setMaxLines(1);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        row.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView v = text(value == null ? "" : value, 17, R.color.muted, false);
         v.setTag("value");
+        v.setMaxLines(1);
+        v.setEllipsize(TextUtils.TruncateAt.END);
+        v.setPadding(dp(10), 0, 0, 0);
         row.addView(v);
         if (opens) {
             ImageView chevron = icon(R.drawable.ic_chevron, R.color.muted, 24);
             LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(dp(24), dp(24));
-            cp.setMarginStart(dp(8));
+            cp.setMarginStart(dp(6));
             row.addView(chevron, cp);
         }
         row.setContentDescription(value == null || value.isEmpty() ? label : label + ", " + value);
@@ -404,14 +627,15 @@ final class Screen {
         row.removeView(old);
         LinearLayout stepper = new LinearLayout(activity);
         stepper.setGravity(Gravity.CENTER_VERTICAL);
-        stepper.addView(icon(R.drawable.ic_chevron_left, R.color.muted, 24), new LinearLayout.LayoutParams(dp(24), dp(24)));
-        TextView v = text(value, 18, R.color.text, true);
+        stepper.addView(icon(R.drawable.ic_chevron_left, R.color.muted, 22), new LinearLayout.LayoutParams(dp(22), dp(22)));
+        TextView v = text(value, 17, R.color.text, true);
         if (numeric) v.setTypeface(numeralsBold);
         v.setTag("value");
-        v.setMinWidth(dp(150));
+        v.setMinWidth(dp(132));
+        v.setMaxLines(1);
         v.setGravity(Gravity.CENTER);
         stepper.addView(v);
-        stepper.addView(icon(R.drawable.ic_chevron, R.color.muted, 24), new LinearLayout.LayoutParams(dp(24), dp(24)));
+        stepper.addView(icon(R.drawable.ic_chevron, R.color.muted, 22), new LinearLayout.LayoutParams(dp(22), dp(22)));
         row.addView(stepper);
         return row;
     }
@@ -431,6 +655,7 @@ final class Screen {
         input.setInputType(secret ? InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD
             : InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
         input.setText(value);
+        input.setDefaultFocusHighlightEnabled(false);
         input.setOnFocusChangeListener((v, focused) -> v.setBackground(focused ? ringed(R.color.panel, 16) : surface(R.color.panel, 16)));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(60));
         lp.bottomMargin = dp(12);
@@ -444,26 +669,28 @@ final class Screen {
         b.setGravity(Gravity.CENTER);
         b.setPadding(dp(26), 0, dp(26), 0);
         b.setBackground(surface(R.color.raised, 999));
-        focusable(b, 999, action);
+        focusable(b, 999, TILE_LIFT, null, action);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, dp(56));
         lp.topMargin = dp(6);
         parent.addView(b, lp);
         return b;
     }
 
-    // Focus: a sky ring and a small lift, eased out. The ring is drawn inside the view's own background.
-    private void focusable(View v, int radius, Runnable action) {
+    // Focus: a ring in the theme's accent and a small lift, eased out. The ring is drawn inside the view's own background.
+    // A wash is the RGB colour the ground's light turns (0 for its quiet neutral); null leaves the light where it is.
+    private void focusable(View v, int radius, float lift, Integer wash, Runnable action) {
         v.setFocusable(true);
         v.setClickable(true);
+        v.setDefaultFocusHighlightEnabled(false); // it would show as a square through a translucent tile
         v.setOnClickListener(x -> action.run());
-        android.graphics.drawable.Drawable rest = v.getBackground();
+        GroundView light = ground;
         v.setOnFocusChangeListener((view, focused) -> {
             if (focused) view.setForeground(ring(radius));
             else view.setForeground(null);
-            view.animate().scaleX(focused ? 1.045f : 1f).scaleY(focused ? 1.045f : 1f)
+            if (focused && wash != null) light.follow(view, wash);
+            view.animate().scaleX(focused ? lift : 1f).scaleY(focused ? lift : 1f)
                 .translationZ(focused ? dp(10) : 0).setDuration(140).setInterpolator(new DecelerateInterpolator(2f)).start();
         });
-        v.setBackground(rest);
     }
 
     private GradientDrawable ring(int radius) {
@@ -501,13 +728,6 @@ final class Screen {
         i.setImageTintList(ColorStateList.valueOf(color(tintId)));
         i.setLayoutParams(new LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)));
         return i;
-    }
-
-    /** Relative luminance (WCAG) of an opaque colour, to pick dark or light words on an app's own tile colour. */
-    static double luminance(int c) {
-        double[] rgb = { Color.red(c) / 255.0, Color.green(c) / 255.0, Color.blue(c) / 255.0 };
-        for (int i = 0; i < 3; i++) rgb[i] = rgb[i] <= 0.03928 ? rgb[i] / 12.92 : Math.pow((rgb[i] + 0.055) / 1.055, 2.4);
-        return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
     }
 
     // Muted hues for lettered tiles, dark enough for warm-white initials at 4.5:1.

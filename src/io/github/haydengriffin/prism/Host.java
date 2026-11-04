@@ -36,6 +36,12 @@ interface Host {
     String resumeApp();
     void resumeApp(String id);
 
+    /** The theme chosen in Setup, which Dusk may be standing in for after sunset. */
+    Theme chosenTheme();
+    void chooseTheme(Theme theme);
+    boolean duskAfterSunset();
+    void duskAfterSunset(boolean on);
+
     void show(Page page);
     /** Opens an app on the LG; the remote follows it there. */
     void launch(Apps.App app);

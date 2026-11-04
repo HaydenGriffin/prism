@@ -11,7 +11,7 @@ PACKAGE = 'io.github.haydengriffin.prism'
 # Classes with no Android dependency; the service, activity, screens, profile and credentials need a device.
 SOURCES = ('AfterLaunch', 'Apps', 'AutoRoute', 'BoxName', 'ForegroundState', 'HaHttp', 'HaLink', 'HealthClock', 'Heartbeat', 'HaSocket', 'HomeRows',
            'Json', 'KeyQueue', 'LauncherLayout', 'RemotePolicy', 'Remotes', 'RemoteState', 'RouteStatus', 'Status', 'TvCue',
-           'TvRegistry', 'TvRoles', 'TvSettings', 'TvState', 'WebSocket')
+           'Theme', 'TvRegistry', 'TvRoles', 'TvSettings', 'TvState', 'WebSocket')
 SUITES = ('RemoteTests', 'UiTests', 'HomeRowsTests', 'RemotesTests')
 
 

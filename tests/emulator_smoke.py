@@ -35,7 +35,8 @@ ROLES.update({k: f'button.renamed_{k}' for k in ('play', 'pause', 'play_pause')}
 APPS = {'Video': 'example.video', 'Music': 'example.music', 'Settings': 'com.palm.app.settings'}
 ENTITY_REGISTRY = [{'entity_id': entity, 'unique_id': f'fixture_{role}', 'device_id': 'fixture-device', 'disabled_by': None}
                    for role, entity in ROLES.items()]
-DEVICE_REGISTRY = [{'id': 'fixture-device', 'name': 'Test LG', 'name_by_user': None}]
+TV_NAME = 'Test LG'
+DEVICE_REGISTRY = [{'id': 'fixture-device', 'name': TV_NAME, 'name_by_user': None}]
 # Linux input codes for the Android keys the service forwards.
 LINUX_KEYS = {19: 103, 20: 108, 21: 105, 22: 106, 23: 28, 4: 158, 85: 164}
 
@@ -354,7 +355,7 @@ class Device:
 
     def service_bound(self):
         dump = self.shell('dumpsys', 'accessibility').decode()
-        return 'LG remote' in dump.split('Bound services:')[1].split('Enabled services:')[0]
+        return 'label=Prism' in dump.split('Bound services:')[1].split('Enabled services:')[0]
 
     def service_dump(self):
         return self.shell('dumpsys', 'accessibility', '--package', PACKAGE).decode()
@@ -429,13 +430,13 @@ class Smoke:
 
     def choose_tv(self):
         d = self.device
-        wait(lambda: d.visible('Test LG'), 'registry discovery over the WebSocket')
-        d.click('Test LG')
+        wait(lambda: d.visible(TV_NAME), 'registry discovery over the WebSocket')
+        d.click(TV_NAME)
         wait(lambda: d.visible('Use HDMI 2'), 'detect Shield input')
         d.shell('input', 'keyevent', '4')
         wait(lambda: d.visible('Choose the TV'), 'Back from Shield input returns to Choose the TV')
-        wait(lambda: d.visible('Test LG'), 'rediscovered')
-        d.click('Test LG')
+        wait(lambda: d.visible(TV_NAME), 'rediscovered')
+        d.click(TV_NAME)
         wait(lambda: d.visible('Use HDMI 2'), 'detect Shield input again')
         d.shot('setup-current-input')
         d.click('Use HDMI 2')

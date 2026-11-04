@@ -6,11 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The first screen: Continue on the LG, favourites as big app tiles, recently used beside All apps, then the TV's own
- * places. Setup is the header's icon button. Rows keep their places (LauncherLayout).
+ * The first screen, all of it on one screen: Continue as the big tile, favourites and recent apps in the grid beside
+ * it with All apps always last, the TV's own places in the dock, and the beam at the foot. See LauncherLayout.
  */
 final class LauncherScreen {
-    static final int COLUMNS = LauncherLayout.COLUMNS;
+    private static final int COLUMNS = LauncherLayout.COLUMNS;
+    private static final int CHIP = 84, SHORT_CHIP = 66;
+    /** The Quick TV settings tile, which gets the focus back when its sheet closes. */
+    static final String QUICK = "quick";
     private final Host host;
     private List<Apps.App> recent = new ArrayList<>();
     /** The Continue tile's app, or null. Seeded from the last one shown, so a cold start draws it at once. */
@@ -27,25 +30,17 @@ final class LauncherScreen {
             String id = host.resumeApp();
             resume = id == null ? null : Apps.find(host.catalog(), id);
         }
-        s.page("Prism", tv == null ? "" : tv.name + " · " + host.box().label() + " on " + tv.shieldOption);
-        s.headerButton(R.drawable.ic_remote, "Setup", () -> host.show(Host.Page.SETUP)).setTag("setup");
-        for (LauncherLayout.Row row : LauncherLayout.rows(tv != null, status.needsAction, resume != null)) {
+        s.deckPage();
+        for (LauncherLayout.Row row : LauncherLayout.rows(tv != null, status.needsAction)) {
             switch (row) {
                 case ATTENTION: attention(s, status); break;
-                case RESUME: resumeRow(s); break;
-                case FAVOURITES: favourites(s); break;
-                case RECENT: recentRow(s); break;
-                case TV: tvRow(s); break;
+                case DECK: deck(s, status.needsAction); break;
+                case DOCK: dock(s); break;
             }
         }
-        focus(s, focusTag);
+        s.statusLine(host.box().label(), tv == null ? "" : tv.name + " · " + host.box().label() + " on " + tv.shieldOption);
+        focus(focusTag);
         refresh();
-    }
-
-    private void resumeRow(Screen s) {
-        Apps.App app = resume;
-        LinearLayout row = s.grid(1, 96, 0);
-        s.wideAppTile(row, app, "Continue on the LG · " + app.title, host.icons(), () -> host.launch(app)).setTag("resume");
     }
 
     private void attention(Screen s, Status status) {
@@ -56,22 +51,27 @@ final class LauncherScreen {
         row.setTag("attention");
     }
 
-    private void favourites(Screen s) {
-        List<Apps.App> apps = host.favourites().resolve(host.catalog());
-        s.section("Favourites");
-        if (apps.isEmpty()) {
-            LinearLayout row = s.grid(COLUMNS, 120, 1);
-            s.tile(row, "Choose favourites", "Your apps, one press away", R.drawable.ic_star_outline,
-                () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
-            while (row.getChildCount() < COLUMNS) s.spacer(row);
-            return;
-        }
-        for (int start = 0; start < apps.size(); start += COLUMNS) {
-            LinearLayout row = s.grid(COLUMNS, 120, 0);
-            for (int i = start; i < start + COLUMNS; i++) {
-                if (i < apps.size()) {
-                    Apps.App app = apps.get(i);
-                    s.appTile(row, app, false, host.icons(), () -> host.launch(app)).setTag(app.id);
+    private void deck(Screen s, boolean attention) {
+        List<Apps.App> favourites = host.favourites().resolve(host.catalog());
+        LauncherLayout.Deck deck = LauncherLayout.deck(resume, favourites, recent);
+        LinearLayout column = s.deckRow(LauncherLayout.deckHeight(attention), row -> bigTile(s, row, deck));
+        boolean choose = favourites.isEmpty() && deck.hero != null && deck.grid.size() < LauncherLayout.GRID_APPS;
+        int chip = attention ? SHORT_CHIP : CHIP;
+        int next = 0;
+        for (int r = 0; r < LauncherLayout.GRID_ROWS; r++) {
+            LinearLayout row = s.grid(column, COLUMNS, LauncherLayout.tileHeight(attention));
+            if (r == LauncherLayout.GRID_ROWS - 1) ((LinearLayout.LayoutParams) row.getLayoutParams()).bottomMargin = 0;
+            for (int c = 0; c < COLUMNS; c++) {
+                if (r == LauncherLayout.GRID_ROWS - 1 && c == COLUMNS - 1) {
+                    s.glyphTile(row, "All apps", R.drawable.ic_apps, chip, () -> host.show(Host.Page.APPS)).setTag("apps");
+                } else if (r == 0 && c == 0 && choose) {
+                    s.glyphTile(row, "Choose favourites", R.drawable.ic_star_outline, chip, () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
+                } else if (next < deck.grid.size()) {
+                    Apps.App app = deck.grid.get(next++);
+                    s.appTile(row, app, false, host.icons(), chip, 2, () -> host.launch(app)).setTag(app.id);
+                } else if (deck.grid.isEmpty() && r == 0) {
+                    s.quiet(row, "Apps you open on the LG show up here", COLUMNS - c);
+                    break;
                 } else {
                     s.spacer(row);
                 }
@@ -79,24 +79,24 @@ final class LauncherScreen {
         }
     }
 
-    /** Always present: up to three apps, then All apps in the last column; with none, a quiet line holds the row. */
-    private void recentRow(Screen s) {
-        s.section("Recently used");
-        LinearLayout row = s.grid(COLUMNS, 84, 0);
-        for (Apps.App app : recent) s.appTile(row, app, false, host.icons(), () -> host.launch(app)).setTag("recent:" + app.id);
-        int gap = LauncherLayout.recentGap(recent.size());
-        if (recent.isEmpty()) s.quiet(row, "Apps you open on the LG show up here", gap);
-        else for (int i = 0; i < gap; i++) s.spacer(row);
-        s.tile(row, "All apps", null, R.drawable.ic_apps, () -> host.show(Host.Page.APPS)).setTag("apps");
+    private void bigTile(Screen s, LinearLayout row, LauncherLayout.Deck deck) {
+        if (deck.hero == null) {
+            s.bigGlyphTile(row, "Choose favourites", "Your apps, one press away", R.drawable.ic_star_outline,
+                () -> host.show(Host.Page.FAVOURITES)).setTag("big");
+            return;
+        }
+        Apps.App app = deck.hero;
+        String label = deck.continues ? "Continue on the LG" : host.favourites().contains(app.id) ? "Favourite" : "Recently used";
+        s.bigAppTile(row, app, label, host.icons(), () -> host.launch(app)).setTag("big");
     }
 
-    private void tvRow(Screen s) {
-        s.section("TV");
-        LinearLayout row = s.grid(COLUMNS, 88, 0);
-        s.tile(row, "LG Home", null, R.drawable.ic_home, host::openLgHome).setTag("home");
-        s.tile(row, "LG Settings", null, R.drawable.ic_settings, this::openSettings).setTag("settings");
-        s.tile(row, "Quick TV settings", null, R.drawable.ic_tune, () -> host.show(Host.Page.QUICK_SETTINGS)).setTag("quick");
-        s.spacer(row);
+    private void dock(Screen s) {
+        LinearLayout row = s.grid(COLUMNS, LauncherLayout.DOCK);
+        ((LinearLayout.LayoutParams) row.getLayoutParams()).bottomMargin = 0;
+        s.dockTile(row, "LG Home", R.drawable.ic_home, host::openLgHome).setTag("home");
+        s.dockTile(row, "LG Settings", R.drawable.ic_settings, this::openSettings).setTag("settings");
+        s.dockTile(row, "Quick TV settings", R.drawable.ic_tune, () -> host.show(Host.Page.QUICK_SETTINGS)).setTag(QUICK);
+        s.dockTile(row, "Setup", R.drawable.ic_remote, () -> host.show(Host.Page.SETUP)).setTag("setup");
     }
 
     private void openSettings() {
@@ -115,7 +115,7 @@ final class LauncherScreen {
                 if (catalog.isEmpty()) return; // The TV is off: keep what is shown; the live line says so.
                 List<String> history = TvData.history(api, host.profile());
                 Apps.App last = Apps.resume(history, catalog);
-                List<Apps.App> used = Apps.recent(history, catalog, host.favourites(), last == null ? null : last.id);
+                List<Apps.App> used = Apps.recent(history, catalog, host.favourites(), last == null ? null : last.id, LauncherLayout.GRID_APPS);
                 host.main().post(() -> {
                     if (!host.current(request)) return;
                     boolean changed = !ids(catalog).equals(ids(host.catalog())) || !ids(used).equals(ids(recent))
@@ -132,22 +132,22 @@ final class LauncherScreen {
         });
     }
 
-    private void redraw() {
-        View focused = host.screen().content.findFocus();
-        Object tag = focused == null ? null : focused.getTag();
+    /** Draws the launcher again with the focus where it was. */
+    void redraw() {
+        String tag = host.screen().focusedTag();
         host.show(Host.Page.LAUNCHER);
-        if (tag != null) focus(host.screen(), tag.toString());
+        if (tag != null) focus(tag);
     }
 
-    private static void focus(Screen s, String tag) {
+    private void focus(String tag) {
+        Screen s = host.screen();
         View target = tag == null ? null : s.content.findViewWithTag(tag);
         if (target == null) target = firstFocusable(s.content);
         if (target != null) target.requestFocus();
     }
 
-    /** The first focusable view, skipping the page header (its icon button is reached with Up). */
+    /** The first focusable view on the page. */
     static View firstFocusable(View v) {
-        if (Screen.HEADER.equals(v.getTag())) return null;
         if (v.isFocusable() && v.getVisibility() == View.VISIBLE) return v;
         if (v instanceof android.view.ViewGroup) {
             android.view.ViewGroup g = (android.view.ViewGroup) v;

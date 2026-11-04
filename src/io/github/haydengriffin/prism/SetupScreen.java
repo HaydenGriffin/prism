@@ -10,7 +10,7 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** Setup: one list of what is configured, each row opening its own short page. Rarely visited. */
+/** Setup: what is configured, in two columns so it all shows at once, each row opening its own short page. Rarely visited. */
 final class SetupScreen {
     private final Host host;
     private final android.app.Activity activity;
@@ -29,9 +29,12 @@ final class SetupScreen {
         TvProfile tv = host.profile();
         Credentials c = host.credentials();
         boolean enabled = AutomaticService.enabled(activity);
+        s.twoColumns();
         s.listRow(R.drawable.ic_remote, "Follow the TV", enabled ? "On" : "Off", false, this::toggleFollow).setTag("follow");
         s.listRow(R.drawable.ic_tv, "Close after opening on the LG", MainActivity.closesAfterOpening(activity) ? "On" : "Off",
             false, this::toggleClose).setTag("close");
+        s.listRow(R.drawable.ic_picture, "Theme", host.chosenTheme().name, false, this::nextTheme).setTag("theme");
+        s.listRow(R.drawable.ic_brightness, "Dusk after sunset", host.duskAfterSunset() ? "On" : "Off", false, this::toggleDusk).setTag("dusk");
         s.listRow(R.drawable.ic_permission, "Remote permission", AutomaticService.live != null ? "Allowed" : "Not allowed", true,
             () -> host.show(Host.Page.PERMISSION)).setTag("permission");
         s.listRow(R.drawable.ic_remote, "Remotes", RemotesScreen.summary(activity), true,
@@ -44,16 +47,17 @@ final class SetupScreen {
         boolean exempt = DozeExemption.granted(activity);
         s.listRow(R.drawable.ic_sleep, "Stay connected in sleep", exempt ? "On" : "Off · needs adb", false,
             () -> open("sleep")).setTag("sleep");
-        if (!exempt) {
-            s.note("While the box sleeps, Android cuts this app off from Home Assistant. Android TV has no setting for "
-                + "this; from a computer run: " + DozeExemption.fix(activity), true);
-        }
         int chosen = host.favourites().stored().size();
         s.listRow(R.drawable.ic_star_outline, "Favourites", chosen == 0 ? "None" : String.valueOf(chosen), true,
             () -> host.show(Host.Page.FAVOURITES)).setTag("favourites");
         ChannelSync.setupRow(s, activity, () -> open("channels"));
         s.listRow(R.drawable.ic_check, "Monitoring", MonitoringScreen.summary(activity), true,
             () -> host.show(Host.Page.MONITORING)).setTag("monitoring");
+        s.endColumns();
+        if (!exempt) {
+            s.note("While the box sleeps, Android cuts this app off from Home Assistant. Android TV has no setting for "
+                + "this; from a computer run: " + DozeExemption.fix(activity), true);
+        }
         focus(focusTag);
     }
 
@@ -67,6 +71,16 @@ final class SetupScreen {
     private void toggleClose() {
         MainActivity.closesAfterOpening(activity, !MainActivity.closesAfterOpening(activity));
         open("close");
+    }
+
+    private void nextTheme() {
+        host.chooseTheme(host.chosenTheme().next());
+        open("theme");
+    }
+
+    private void toggleDusk() {
+        host.duskAfterSunset(!host.duskAfterSunset());
+        open("dusk");
     }
 
     void permission() {

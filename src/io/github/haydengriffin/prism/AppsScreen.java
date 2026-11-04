@@ -41,12 +41,12 @@ final class AppsScreen {
 
     private void grid(Screen s, List<Apps.App> apps, boolean choosing) {
         for (int start = 0; start < apps.size(); start += COLUMNS) {
-            LinearLayout row = s.grid(COLUMNS, 108, 0);
+            LinearLayout row = s.grid(COLUMNS, 108);
             for (int i = start; i < start + COLUMNS; i++) {
                 if (i >= apps.size()) { s.spacer(row); continue; }
                 Apps.App app = apps.get(i);
                 boolean favourite = choosing && host.favourites().contains(app.id);
-                s.appTile(row, app, favourite, host.icons(), () -> {
+                s.appTile(row, app, favourite, host.icons(), 58, 1, () -> {
                     if (!choosing) { host.launch(app); return; }
                     host.favourites().toggle(app.id, app.title);
                     host.saveFavourites();

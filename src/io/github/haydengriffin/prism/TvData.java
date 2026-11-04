@@ -71,6 +71,20 @@ final class TvData {
         }
     }
 
+    /**
+     * Whether Home Assistant's sun is below the horizon. No sun for this user is an answer (no sunset, so the chosen
+     * theme stays); null means Home Assistant could not be asked right now.
+     */
+    static Boolean sunDown(HaHttp api) {
+        try {
+            return new JSONObject(api.browse("states/sun.sun")).optString("state").equals("below_horizon");
+        } catch (HaHttp.HttpFailure e) {
+            return e.status >= 500 ? null : Boolean.FALSE;
+        } catch (IOException | JSONException | RuntimeException e) {
+            return null;
+        }
+    }
+
     private static String optional(JSONObject map, String key) {
         if (map == null) return null;
         String value = map.optString(key, "");
