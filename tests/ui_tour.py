@@ -94,8 +94,6 @@ def make_handler(tv, icons, port):
 class Tour(smoke.Smoke):
     def tour(self):
         self.prepare_emulator()
-        # A dump that fails leaves the last one in place: never read one from an earlier run.
-        self.device.shell('rm', '-f', '/data/local/tmp/lg-auto.xml')
         self.device.shell('wm', 'size', f'1920x{SCREEN_HEIGHT + GESTURE_BAR}')
         self.device.shell('settings', 'put', 'global', 'device_name', BOX_NAME)
         self.provision()
@@ -237,6 +235,7 @@ class Tour(smoke.Smoke):
         d.shell('settings', 'put', 'system', 'font_scale', '1.3')
         d.shell('am', 'force-stop', smoke.PACKAGE)
         self.open()
+        smoke.wait(lambda: d.visible('All apps'), 'the launcher after a restart')
         self.fits('large text')
         d.shot('launcher-large-text')
 

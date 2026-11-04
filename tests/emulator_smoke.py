@@ -310,7 +310,9 @@ class Device:
 
     def dump(self):
         for attempt in range(3):
-            # uiautomator is occasionally killed on a freshly booted emulator; a retry succeeds.
+            # uiautomator is occasionally killed on a freshly booted emulator; a retry succeeds. A failed dump leaves
+            # the last one in place, so that goes first: an old screen must never pass for this one.
+            self.adb('shell', 'rm', '-f', '/data/local/tmp/lg-auto.xml', check=False)
             if self.adb('shell', 'uiautomator', 'dump', '/data/local/tmp/lg-auto.xml', check=False) is not None:
                 try:
                     return ET.fromstring(self.adb('exec-out', 'cat', '/data/local/tmp/lg-auto.xml'))
