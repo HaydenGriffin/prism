@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+- The launcher fits one screen: a big Continue tile, a grid of favourites, recent apps and then the TV's others ending
+  in All apps, and a dock with LG Home, LG Settings, Quick TV settings and Setup. Favourites past the grid's seven
+  places stay in All apps.
+- A failure gets the launcher's fix-this row, with a Check action, and that row is coloured by how serious it is. Allow
+  opens the permission page directly.
+- All apps shows four whole rows of six, and names wrap rather than get cut.
+- The box's input reads its short name whatever the LG calls that port, and a long input name no longer cuts the row's
+  label in Quick TV settings.
+- A beam on the launcher's status line shows who has the remote, the box or the LG, beside the same thing in words.
+- Themes in Setup: Refract (new default; a soft light follows the focused tile in that app's colour), OLED Night, Dusk
+  and Daylight. Setup → Dusk after sunset switches to Dusk when Home Assistant's sun has set.
+- Quick TV settings is a sheet over the launcher, with all seven settings on screen.
+- Setup lists its rows in two columns, so they all show at once. Pages that do outgrow the screen fade at the edge.
+- Setup's red adb paragraph is gone: OK on Stay connected in sleep shows the command when you want it.
+- "Remote follows the TV" and "Choose your TV" name things more plainly, and Monitoring reads On or Off.
+- App tiles keep the app's art on its own colour and the name underneath, so a short tile's initial no longer runs
+  into its name.
+
 ## 1.0.1
 
 - Prism stays open behind what it opens on the LG, so LG Settings and other LG menus that cover part of the screen

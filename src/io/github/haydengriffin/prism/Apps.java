@@ -98,8 +98,13 @@ final class Apps {
 
     /** As above, also leaving out the app the Continue tile already offers (skip may be null). */
     static List<App> recent(List<String> history, List<App> catalog, Favourites favourites, String skip) {
+        return recent(history, catalog, favourites, skip, RECENT_LIMIT);
+    }
+
+    /** As above, with room for up to `limit` apps. */
+    static List<App> recent(List<String> history, List<App> catalog, Favourites favourites, String skip, int limit) {
         Map<String, App> seen = new LinkedHashMap<>();
-        for (int i = history.size() - 1; i >= 0 && seen.size() < RECENT_LIMIT; i--) {
+        for (int i = history.size() - 1; i >= 0 && seen.size() < limit; i--) {
             App app = match(catalog, history.get(i));
             if (app == null || !launchable(app.id) || favourites.contains(app.id) || app.id.equals(skip)) continue;
             seen.putIfAbsent(app.id, app);

@@ -7,8 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Quick TV settings: Left/Right steps a value, which is sent after a short pause so only the last step goes. */
+/**
+ * Quick TV settings, a sheet over the launcher so a picture change shows on the page behind it. Left/Right steps a
+ * value, which is sent after a short pause so only the last step goes.
+ */
 final class QuickSettingsScreen {
+    private static final String HINT = "Left and Right change a value";
     private static final Map<String, Integer> ICONS = new HashMap<>();
     static {
         ICONS.put("input_source", R.drawable.ic_input);
@@ -27,7 +31,7 @@ final class QuickSettingsScreen {
 
     void open() {
         Screen s = host.screen();
-        s.page("Quick TV settings", "Left and Right change a value, sent when you pause · picture settings apply to what is on screen");
+        s.openSheet("Quick TV settings");
         note = s.note("Reading the TV's settings…", false);
         int request = host.request();
         TvProfile tv = host.profile();
@@ -68,7 +72,7 @@ final class QuickSettingsScreen {
             error("The TV offers no settings right now. Is it on?");
             return;
         }
-        note.setText("");
+        note.setText(HINT);
         for (TvSettings.Value value : values) {
             LinearLayout row = s.stepperRow(ICONS.get(value.row.role), value.row.label, value.text(), value.row.number());
             row.setOnClickListener(v -> { value.advance(); changed(row, value, request); });
@@ -82,6 +86,7 @@ final class QuickSettingsScreen {
             });
         }
         LauncherScreen.firstFocusable(s.content).requestFocus();
+        s.sheetReady();
     }
 
     private void changed(LinearLayout row, TvSettings.Value value, int request) {
@@ -103,7 +108,9 @@ final class QuickSettingsScreen {
                 host.api().setValue(entity, target);
                 host.main().post(() -> {
                     value.confirmed = target;
-                    if (host.current(request)) note.setText(label + " sent to the TV.");
+                    if (!host.current(request)) return;
+                    note.setTextColor(host.screen().color(R.color.muted));
+                    note.setText(label + " sent to the TV.");
                 });
             } catch (Exception e) {
                 host.main().post(() -> {

@@ -10,12 +10,14 @@ import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** Setup: one list of what is configured, each row opening its own short page. Rarely visited. */
+/** Setup: what is configured, in two columns so it all shows at once, each row opening its own short page. Rarely visited. */
 final class SetupScreen {
     private final Host host;
     private final android.app.Activity activity;
     /** The TV picked on Choose the TV, until its Shield input is saved; null when Shield input came from Setup. */
     private TvProfile chosen;
+    /** OK on Stay connected in sleep, which has no setting on the box: Setup's next draw says what to run. */
+    private boolean sleepFixAsked;
 
     SetupScreen(Host host, android.app.Activity activity) {
         this.host = host;
@@ -29,9 +31,12 @@ final class SetupScreen {
         TvProfile tv = host.profile();
         Credentials c = host.credentials();
         boolean enabled = AutomaticService.enabled(activity);
-        s.listRow(R.drawable.ic_remote, "Follow the TV", enabled ? "On" : "Off", false, this::toggleFollow).setTag("follow");
+        s.twoColumns();
+        s.listRow(R.drawable.ic_remote, "Remote follows the TV", enabled ? "On" : "Off", false, this::toggleFollow).setTag("follow");
         s.listRow(R.drawable.ic_tv, "Close after opening on the LG", MainActivity.closesAfterOpening(activity) ? "On" : "Off",
             false, this::toggleClose).setTag("close");
+        s.listRow(R.drawable.ic_picture, "Theme", host.chosenTheme().name, false, this::nextTheme).setTag("theme");
+        s.listRow(R.drawable.ic_brightness, "Dusk after sunset", host.duskAfterSunset() ? "On" : "Off", false, this::toggleDusk).setTag("dusk");
         s.listRow(R.drawable.ic_permission, "Remote permission", AutomaticService.live != null ? "Allowed" : "Not allowed", true,
             () -> host.show(Host.Page.PERMISSION)).setTag("permission");
         s.listRow(R.drawable.ic_remote, "Remotes", RemotesScreen.summary(activity), true,
@@ -42,18 +47,18 @@ final class SetupScreen {
         s.listRow(R.drawable.ic_server, "Home Assistant", c == null ? "Connect" : hostName(c.url), true,
             () -> host.show(Host.Page.CONNECTION)).setTag("connection");
         boolean exempt = DozeExemption.granted(activity);
-        s.listRow(R.drawable.ic_sleep, "Stay connected in sleep", exempt ? "On" : "Off · needs adb", false,
-            () -> open("sleep")).setTag("sleep");
-        if (!exempt) {
-            s.note("While the box sleeps, Android cuts this app off from Home Assistant. Android TV has no setting for "
-                + "this; from a computer run: " + DozeExemption.fix(activity), true);
-        }
+        boolean showFix = sleepFixAsked;
+        sleepFixAsked = false;
+        s.listRow(R.drawable.ic_sleep, "Stay connected in sleep", exempt ? "On" : "Off · needs adb", !exempt,
+            () -> { sleepFixAsked = !exempt; open("sleep"); }).setTag("sleep");
         int chosen = host.favourites().stored().size();
         s.listRow(R.drawable.ic_star_outline, "Favourites", chosen == 0 ? "None" : String.valueOf(chosen), true,
             () -> host.show(Host.Page.FAVOURITES)).setTag("favourites");
         ChannelSync.setupRow(s, activity, () -> open("channels"));
         s.listRow(R.drawable.ic_check, "Monitoring", MonitoringScreen.summary(activity), true,
             () -> host.show(Host.Page.MONITORING)).setTag("monitoring");
+        s.endColumns();
+        if (showFix) s.note("From a computer, run: " + DozeExemption.fix(activity), false).setMaxWidth(s.dp(864)); // one line, to stay on screen
         focus(focusTag);
     }
 
@@ -69,13 +74,23 @@ final class SetupScreen {
         open("close");
     }
 
+    private void nextTheme() {
+        host.chooseTheme(host.chosenTheme().next());
+        open("theme");
+    }
+
+    private void toggleDusk() {
+        host.duskAfterSunset(!host.duskAfterSunset());
+        open("dusk");
+    }
+
     void permission() {
         Screen s = host.screen();
         s.page("Remote permission", "");
         s.note("Prism uses Android accessibility to receive the remote's arrows, OK, Back and play buttons while "
             + "another app is open. It forwards them to the TV only while an LG app is in front. It cannot read the "
             + "screen or anything typed.", false);
-        s.note("On the box: Settings → Device Preferences → Accessibility → Prism.", false);
+        s.note("On " + host.box().the() + ": Settings → Device Preferences → Accessibility → Prism.", false);
         LinearLayout actions = new LinearLayout(activity);
         s.content.addView(actions);
         s.pill(actions, AutomaticService.live != null ? "Allowed · open settings" : "Open Android settings", this::openAccessibility)
@@ -138,7 +153,7 @@ final class SetupScreen {
     void chooseTv() {
         Screen s = host.screen();
         chosen = null;
-        s.page("Choose the TV", "Glasshouse TVs in Home Assistant");
+        s.page("Choose your TV", "Glasshouse TVs in Home Assistant");
         if (host.credentials() == null) { host.show(Host.Page.CONNECTION); return; }
         android.widget.TextView note = s.note("Looking for TVs…", false);
         int request = host.request();

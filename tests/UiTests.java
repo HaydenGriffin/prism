@@ -22,6 +22,7 @@ public final class UiTests {
         recent();
         resume();
         layout();
+        themes();
         settings();
         input();
         status();
@@ -93,21 +94,89 @@ public final class UiTests {
         List<String> ids = new ArrayList<>();
         for (Apps.App a : Apps.recent(history, catalog, none, last.id)) ids.add(a.id);
         check(ids.equals(Arrays.asList("demand5", "com.fvp.itv")), "Recently used leaves out the Continue app: " + ids);
+        check(Apps.recent(Arrays.asList("ITVX", "5"), catalog, none, null, 1).size() == 1, "the launcher sets its own limit");
     }
 
     private static void layout() {
-        check(LauncherLayout.rows(true, false, false).equals(Arrays.asList(
-            LauncherLayout.Row.FAVOURITES, LauncherLayout.Row.RECENT, LauncherLayout.Row.TV)),
-            "ready, nothing recent: Recently used still has its row");
-        check(LauncherLayout.rows(true, true, true).equals(Arrays.asList(LauncherLayout.Row.ATTENTION,
-            LauncherLayout.Row.RESUME, LauncherLayout.Row.FAVOURITES, LauncherLayout.Row.RECENT, LauncherLayout.Row.TV)),
-            "attention and Continue come and go above the stable rows");
-        check(LauncherLayout.rows(false, true, true).equals(Arrays.asList(LauncherLayout.Row.ATTENTION)),
-            "before setup only the fix-this row (Setup is in the header)");
-        for (int apps = 0; apps <= Apps.RECENT_LIMIT; apps++) {
-            check(apps + LauncherLayout.recentGap(apps) + 1 == LauncherLayout.COLUMNS,
-                "All apps closes the Recently used row with " + apps + " apps");
+        check(LauncherLayout.rows(true, false).equals(Arrays.asList(LauncherLayout.Row.DECK, LauncherLayout.Row.DOCK)),
+            "ready: the deck and the dock");
+        check(LauncherLayout.rows(true, true).equals(Arrays.asList(LauncherLayout.Row.ATTENTION, LauncherLayout.Row.DECK, LauncherLayout.Row.DOCK)),
+            "the fix-this row comes and goes above them");
+        check(LauncherLayout.rows(false, true).equals(Arrays.asList(LauncherLayout.Row.ATTENTION)),
+            "before setup only the fix-this row");
+        check(LauncherLayout.height(false) <= LauncherLayout.SCREEN && LauncherLayout.height(true) <= LauncherLayout.SCREEN,
+            "the launcher fits the screen, fix-this row or not: " + LauncherLayout.height(false) + ", " + LauncherLayout.height(true));
+        check(LauncherLayout.tileHeight(true) >= 120, "a grid tile still holds its art and two lines beside the fix-this row");
+        check(LauncherLayout.GRID_APPS == 7, "All apps keeps the grid's eighth place");
+
+        List<Apps.App> none = new ArrayList<>();
+        List<Apps.App> favourites = Arrays.asList(app("a", "A"), app("b", "B"));
+        List<Apps.App> recent = Arrays.asList(app("c", "C"), app("d", "D"));
+        LauncherLayout.Deck both = LauncherLayout.deck(app("c", "C"), favourites, recent, none);
+        check(both.continues && both.hero.id.equals("c") && titles(both.grid).equals("A B D"),
+            "Continue is the big tile; favourites come first; nothing shows twice: " + titles(both.grid));
+        LauncherLayout.Deck favourite = LauncherLayout.deck(app("a", "A"), favourites, recent, none);
+        check(favourite.hero.id.equals("a") && titles(favourite.grid).equals("B C D"), "a favourite on Continue leaves the grid");
+        LauncherLayout.Deck noResume = LauncherLayout.deck(null, favourites, recent, none);
+        check(!noResume.continues && noResume.hero.id.equals("a") && titles(noResume.grid).equals("B C D"),
+            "with nothing to continue, the first favourite takes the big tile");
+        LauncherLayout.Deck onlyRecent = LauncherLayout.deck(null, none, recent, none);
+        check(!onlyRecent.continues && onlyRecent.hero.id.equals("c"), "or the newest recent app");
+        LauncherLayout.Deck empty = LauncherLayout.deck(null, none, none, none);
+        check(empty.hero == null && empty.grid.isEmpty(), "with no apps at all the big tile offers to choose favourites");
+        List<Apps.App> tv = Arrays.asList(app("c", "C"), app("e", "E"), app(Apps.LaunchIds.SETTINGS, "Settings"), app("f", "F"));
+        LauncherLayout.Deck filled = LauncherLayout.deck(app("a", "A"), favourites, recent, tv);
+        check(titles(filled.grid).equals("B C D E F"), "the TV's other apps fill the grid's holes, once each, without Settings: " + titles(filled.grid));
+        LauncherLayout.Deck notChosen = LauncherLayout.deck(null, none, none, tv);
+        check(notChosen.hero == null && titles(notChosen.grid).equals("C E F"), "apps nobody chose never take the big tile");
+        List<Apps.App> many = new ArrayList<>();
+        for (int i = 0; i < 12; i++) many.add(app("f" + i, "F" + i));
+        LauncherLayout.Deck full = LauncherLayout.deck(null, many, recent, none);
+        check(full.grid.size() == LauncherLayout.GRID_APPS && full.grid.get(0).id.equals("f1"),
+            "favourites past the grid's room wait in All apps");
+    }
+
+    private static String titles(List<Apps.App> apps) {
+        StringBuilder out = new StringBuilder();
+        for (Apps.App a : apps) out.append(out.length() == 0 ? "" : " ").append(a.title);
+        return out.toString();
+    }
+
+    private static void themes() {
+        check(Theme.byId("nonsense") == Theme.REFRACT && Theme.byId("dusk") == Theme.DUSK, "unknown ids read as the default");
+        Theme walked = Theme.REFRACT;
+        for (int i = 0; i < Theme.ALL.size(); i++) walked = walked.next();
+        check(walked == Theme.REFRACT, "the Setup row goes round every theme");
+        check(Theme.resolve("daylight", false, true) == Theme.DAYLIGHT, "the sun changes nothing unless asked");
+        check(Theme.resolve("daylight", true, false) == Theme.DAYLIGHT, "by day the chosen theme stays");
+        check(Theme.resolve("daylight", true, true) == Theme.DUSK, "after sunset, Dusk");
+        // Every colour an LG tile might have, including the brightest: the words stay readable at the wash's peak.
+        int[] colours = { 0xFFFFFF, 0x000000, 0x808080, 0xD6E04A, 0xA5E27C, 0xFFD400, 0x00FFFF, 0xD0085A, 0xFF0000, 0x0000FF, 0x00FF00, 0xFF9D5C };
+        for (Theme t : Theme.ALL) {
+            int top = t.washes ? Theme.over(Theme.wash(0xFFD400), t.groundTop) : t.groundTop;
+            check(Theme.contrast(t.text, Theme.over(t.panel, t.groundTop)) >= 4.5, t.name + ": words on a tile");
+            check(Theme.contrast(t.muted, Theme.over(t.panel, t.groundBottom)) >= 4.5, t.name + ": muted words on a tile");
+            check(Theme.contrast(t.text, t.sheet) >= 4.5 && Theme.contrast(t.muted, t.sheet) >= 4.5, t.name + ": words on the sheet");
+            check(Theme.contrast(t.text, Theme.over(t.panel, t.sheet)) >= 4.5 && Theme.contrast(t.muted, Theme.over(t.panel, t.sheet)) >= 4.5,
+                t.name + ": words on the sheet's rows");
+            check(Theme.contrast(t.muted, t.groundBottom) >= 4.5, t.name + ": muted words on the ground");
+            check(Theme.contrast(t.error, t.groundTop) >= 4.5 && Theme.contrast(t.warn, t.groundTop) >= 4.5, t.name + ": warnings on the ground");
+            check(Theme.contrast(t.error, Theme.over(t.panel, t.groundTop)) >= 4.5 && Theme.contrast(t.warn, Theme.over(t.panel, t.groundTop)) >= 4.5,
+                t.name + ": a fix-this row's words");
+            check(Theme.contrast(t.accent, t.groundBottom) >= 3 && Theme.contrast(t.accent, top) >= 3, t.name + ": the focus ring shows");
+            check(Theme.contrast(t.accentInk, t.accent) >= 3, t.name + ": a star on the accent");
+            check(Theme.contrast(t.sky, t.groundBottom) >= 3 && Theme.contrast(t.amber, t.groundBottom) >= 3, t.name + ": the beam's ends show");
         }
+        for (int rgb : colours) {
+            int wash = Theme.wash(rgb);
+            int ground = Theme.over(wash, Theme.REFRACT.groundTop);
+            check(Theme.contrast(Theme.REFRACT.muted, Theme.over(Theme.REFRACT.panel, ground)) >= 4.5,
+                "muted words at the peak of the wash for " + Integer.toHexString(rgb));
+            check(Theme.contrast(Theme.REFRACT.text, ground) >= 4.5, "words on the wash for " + Integer.toHexString(rgb));
+        }
+        check(Theme.wash(0xFFFFFF) == Theme.wash(0x000000) && Theme.wash(0xFFFFFF) == Theme.wash(0x808080),
+            "white, black and grey share the quiet wash rather than greying the ground");
+        check((Theme.wash(0xD0085A) & 0xFFFFFF) != (Theme.wash(0x0000FF) & 0xFFFFFF), "colours keep their own hue");
     }
 
     private static void input() {
@@ -120,6 +189,10 @@ public final class UiTests {
         v.move(-1);
         check(!v.changed() && v.text().equals("SHIELD"), "back to the box: nothing to send");
         check(v.move(-1).equals("HDMI 2"), "Left steps back; the option, not the label, is what gets sent");
+        TvSettings.Value renamed = new TvSettings.Value(row, "SHIELD Game Console (HDMI3)",
+            Arrays.asList("HDMI 1", "SHIELD Game Console (HDMI3)", "PlayStation (HDMI1)"), 0, 0).named("HDMI 3", "SHIELD");
+        check(renamed.text().equals("SHIELD"), "the box's input reads its name whatever the LG calls that port");
+        check(renamed.move(1).equals("PlayStation (HDMI1)") && renamed.text().equals("PlayStation (HDMI1)"), "another port keeps its own name");
     }
 
     private static void settings() {
@@ -155,5 +228,11 @@ public final class UiTests {
         Status failing = Status.of(true, true, true, new RemoteState(RemoteState.Mode.ERROR, "Home Assistant refused the token"), BOX);
         check(failing.tone == Status.Tone.ALERT && failing.text.equals("Home Assistant refused the token"),
             "errors say the failing step");
+        check(failing.needsAction, "a failure gets the launcher's fix-this row");
+        Status blocked = Status.of(true, true, false, lg, BOX), off = Status.of(true, false, true, lg, BOX);
+        check(!blocked.sameFixRow(off), "one fix-this row turning into another redraws it");
+        check(off.sameFixRow(Status.of(true, false, false, lg, BOX)), "the same row needs no redraw");
+        check(Status.of(true, true, true, lg, BOX).sameFixRow(Status.of(true, true, true, new RemoteState(RemoteState.Mode.TV_OFF, ""), BOX)),
+            "with no fix-this row, the status line alone changes");
     }
 }

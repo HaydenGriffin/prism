@@ -47,12 +47,20 @@ public final class MainActivity extends Activity implements Host {
     private Status shown;
     /** Credentials and profile have been read once; until then the status says nothing about setup. */
     private boolean loaded;
+    /** While Dusk after sunset is on, how often to ask Home Assistant where the sun is. */
+    private static final long SUN_CHECK_MS = 60_000;
+    private final Runnable sunTick = new Runnable() {
+        @Override public void run() {
+            checkSun();
+            main.postDelayed(this, SUN_CHECK_MS);
+        }
+    };
     private final Runnable statusTick = new Runnable() {
         @Override public void run() {
             Status now = status();
-            screen.status(now.text, now.tone);
-            // The launcher's "fix this" row comes and goes with the status.
-            if (page == Page.LAUNCHER && shown != null && shown.needsAction != now.needsAction) show(Page.LAUNCHER);
+            say(now);
+            // The launcher's "fix this" row comes and goes with the status; the focus stays where it was.
+            if (page == Page.LAUNCHER && shown != null && !shown.sameFixRow(now)) launcher.redraw();
             shown = now;
             main.postDelayed(this, 500);
         }
@@ -60,7 +68,7 @@ public final class MainActivity extends Activity implements Host {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        screen = new Screen(this);
+        screen = new Screen(this, wornTheme());
         icons = new IconCache(this);
         launcher = new LauncherScreen(this);
         apps = new AppsScreen(this);
@@ -83,6 +91,7 @@ public final class MainActivity extends Activity implements Host {
                 profile = tv;
                 loaded = true;
                 show(startPage(getIntent()));
+                checkSun();
             });
         });
     }
@@ -95,6 +104,7 @@ public final class MainActivity extends Activity implements Host {
     @Override public void onResume() {
         super.onResume();
         main.post(statusTick);
+        main.post(sunTick);
         if (loaded) reloadProfile();
     }
 
@@ -112,6 +122,7 @@ public final class MainActivity extends Activity implements Host {
 
     @Override public void onPause() {
         main.removeCallbacks(statusTick);
+        main.removeCallbacks(sunTick);
         if (page == Page.QUICK_SETTINGS) quickSettings.flush();
         super.onPause();
     }
@@ -136,14 +147,23 @@ public final class MainActivity extends Activity implements Host {
 
     @Override public void show(Page next) {
         if (page == Page.QUICK_SETTINGS && next != Page.QUICK_SETTINGS) quickSettings.flush();
+        Page previous = page;
         generation++;
         page = next;
         secure(next == Page.CONNECTION);
         switch (next) {
-            case LAUNCHER: launcher.open(status(), null); break;
+            case LAUNCHER: launcher.open(status(), previous == Page.QUICK_SETTINGS ? LauncherScreen.QUICK : null); break;
             case APPS: apps.open(false, null); break;
             case FAVOURITES: apps.open(true, null); break;
-            case QUICK_SETTINGS: quickSettings.open(); break;
+            case QUICK_SETTINGS:
+                // The sheet sits over the launcher, which a shortcut may not have drawn yet. Its refresh must not
+                // come back and redraw the launcher over the sheet, so that request is retired here.
+                if (previous != Page.LAUNCHER) {
+                    launcher.open(status(), null);
+                    generation++;
+                }
+                quickSettings.open();
+                break;
             case SETUP: setup.open(null); break;
             case CONNECTION: setup.connection(); break;
             case CHOOSE_TV: setup.chooseTv(); break;
@@ -153,8 +173,13 @@ public final class MainActivity extends Activity implements Host {
             case MONITORING: monitoring.open(); break;
         }
         Status now = status();
-        screen.status(now.text, now.tone);
+        say(now);
         shown = now;
+    }
+
+    /** The live line. On the launcher a fix-this row already says it, so the line leaves it to the row. */
+    private void say(Status now) {
+        screen.status(page == Page.LAUNCHER && now.needsAction ? "" : now.text, now.tone);
     }
 
     @Override public void onBackPressed() {
@@ -219,7 +244,14 @@ public final class MainActivity extends Activity implements Host {
     }
 
     @Override public Credentials credentials() { return credentials; }
-    @Override public void credentials(Credentials next) { credentials = next; }
+    @Override public void credentials(Credentials next) {
+        boolean moved = credentials != null && next != null && !credentials.url.equals(next.url);
+        credentials = next;
+        if (!moved) return;
+        prefs().edit().remove("sun_down").apply(); // another server, another sky
+        wear();
+        checkSun();
+    }
     @Override public TvProfile profile() { return profile; }
 
     @Override public void profile(TvProfile next) {
@@ -320,8 +352,59 @@ public final class MainActivity extends Activity implements Host {
                 screen.status("Opened on the LG · the remote follows it there", Status.Tone.SKY);
                 break;
             default:
-                screen.status("Opened on the LG · turn on Follow the TV in Setup for the remote to follow", Status.Tone.WARN);
+                screen.status("Opened on the LG · turn on Remote follows the TV in Setup", Status.Tone.WARN);
         }
+    }
+
+    @Override public Theme chosenTheme() { return Theme.byId(prefs().getString("theme", Theme.REFRACT.id)); }
+
+    @Override public void chooseTheme(Theme theme) {
+        prefs().edit().putString("theme", theme.id).apply();
+        wear();
+    }
+
+    @Override public boolean duskAfterSunset() { return prefs().getBoolean("dusk_after_sunset", false); }
+
+    @Override public void duskAfterSunset(boolean on) {
+        SharedPreferences.Editor edit = prefs().edit().putBoolean("dusk_after_sunset", on);
+        if (!on) edit.remove("sun_down");
+        edit.apply();
+        wear();
+        checkSun();
+    }
+
+    private Theme wornTheme() {
+        return Theme.resolve(prefs().getString("theme", Theme.REFRACT.id), duskAfterSunset(), prefs().getBoolean("sun_down", false));
+    }
+
+    /** Puts on the theme Setup and the sun call for; pages drawn from now on wear it. Returns whether it changed. */
+    private boolean wear() {
+        Theme next = wornTheme();
+        if (next == screen.theme()) return false;
+        screen.theme(next);
+        return true;
+    }
+
+    /**
+     * Reads the sun only while it matters. A failed read keeps the last answer, so the theme never flickers on a blip;
+     * an answer from a server Setup has since moved away from is dropped.
+     */
+    private void checkSun() {
+        if (!duskAfterSunset() || credentials == null) return;
+        String url = credentials.url, token = credentials.token;
+        work(() -> {
+            Boolean down = TvData.sunDown(new HaHttp(url, token));
+            if (down == null) return;
+            main.post(() -> {
+                if (isDestroyed() || credentials == null || !credentials.url.equals(url)) return;
+                if (down == prefs().getBoolean("sun_down", false)) return;
+                prefs().edit().putBoolean("sun_down", down).apply();
+                if (!wear()) return;
+                // Only the pages with nothing half-typed redraw on the spot; the rest change on the next page.
+                if (page == Page.LAUNCHER) launcher.redraw();
+                else if (page == Page.SETUP) setup.open(screen.focusedTag());
+            });
+        });
     }
 
     /** Setup's "Close after opening on the LG": off unless chosen. */
