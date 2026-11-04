@@ -75,7 +75,7 @@ final class ChannelArt {
         Canvas c = new Canvas(card);
         int ground = ground(item.app);
         c.drawColor(ground);
-        boolean light = Screen.luminance(ground) > 0.45;
+        boolean light = Theme.luminance(ground) > 0.45;
         int ink = color(light ? R.color.ink : R.color.text);
         if (icon != null) {
             float box = HEIGHT * 0.5f;

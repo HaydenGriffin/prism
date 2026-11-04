@@ -3,9 +3,10 @@
 `social.png` (1280 × 640) is the GitHub social preview, drawn by `tools/brand.py`; upload it under the
 repository's Settings → Social preview.
 
-`hero.png` (3200 × 1640) and `screenshots/` are drawn by `tools/hero.py` from 1920 × 1080 screenshots taken on an
-NVIDIA Shield (`adb exec-out screencap -p > launcher.png`): the launcher, Quick TV settings, and Projectivy's home
-screen with the "LG apps" row. Use made-up favourites and no real Home Assistant address, and keep the Home
+`hero.png` (3200 × 1640) and `screenshots/` are drawn by `tools/hero.py` from 1920 × 1080 screenshots: the launcher,
+Quick TV settings, and Projectivy's home screen with the "LG apps" row. The first two now come from
+`tests/ui_tour.py` on an emulator, cropped to 1080 rows; the row is from an NVIDIA Shield
+(`adb exec-out screencap -p > rows.png`). Use made-up favourites and no real Home Assistant address, and keep the Home
 Assistant page (it blocks screenshots anyway) out of them.
 
 `tv/` holds screenshots the LG took of itself, so they show its own menus over the box: `tv/lg-settings.jpg` is LG

@@ -24,10 +24,13 @@ homebrew title for a jailbroken PS5: the DualSense drives the LG while an LG app
   back in front, they stay on the box.
 - **Hold Back to come back.** Hold Back for 0.8 s while the remote drives the LG to switch the TV to the box's
   input. Home does the same, and still opens the box's home screen.
-- **A launcher for the LG.** Your favourite LG apps as big tiles with their own LG icons, recently used apps, all
-  apps, LG Home, LG Settings, and a "Continue on the LG" tile for the last LG app you used.
+- **A launcher for the LG, all on one screen.** The last LG app you used as a big "Continue on the LG" tile, your
+  favourites and recently used apps beside it with their own LG icons, All apps, and a dock with LG Home, LG
+  Settings, Quick TV settings and Setup. Nothing needs scrolling.
+- **Themes.** Refract, where a soft light follows the focused tile in that app's colour, plus OLED Night, Dusk and
+  Daylight. Setup can also switch to Dusk once Home Assistant's sun has set.
 - **Quick TV settings.** Input, picture mode, OLED brightness, energy saving, sound mode, sleep timer and logo
-  dimming, changed with Left and Right.
+  dimming, changed with Left and Right on a sheet over the launcher, so a picture change shows on the tiles behind it.
 - **Home-screen rows.** Two Android TV channels, "LG apps" and "LG commands", for launchers that show apps'
   channels as rows (such as Projectivy).
 - **The LG keyboard.** While the LG's on-screen keyboard is up, the remote drives it, and a keyboard's Delete and
@@ -36,14 +39,16 @@ homebrew title for a jailbroken PS5: the DualSense drives the LG while an LG app
 
 ## Screenshots
 
-From an NVIDIA Shield with a 2021 LG C1. First, a screenshot the TV took of itself: LG Settings, opened from
-Prism's launcher, over Prism.
+First, a screenshot a 2021 LG C1 took of itself on an NVIDIA Shield: LG Settings, opened from Prism's launcher, over
+Prism. It dates from before the launcher's redesign, which shows under the LG's menu.
 
 <img src="docs/images/tv/lg-settings.jpg" alt="LG Settings on the General page, open over the Prism launcher on the Shield, with the LG Settings tile still focused underneath" width="100%">
 
+The launcher and Quick TV settings, on an emulator with made-up favourites ([`tests/ui_tour.py`](tests/ui_tour.py)):
+
 | The launcher | Quick TV settings |
 |---|---|
-| <img src="docs/images/screenshots/launcher.png" alt="The Prism launcher: Continue on the LG with Afterglow, favourite LG apps with their own icons, and recently used apps"> | <img src="docs/images/screenshots/quick-settings.png" alt="Quick TV settings: input, picture mode, OLED brightness, energy saving, sound mode and sleep timer, each changed with Left and Right"> |
+| <img src="docs/images/screenshots/launcher.png" alt="The Prism launcher on one screen: a big Continue on the LG tile for Afterglow, a grid of favourite and recent LG apps ending in All apps, a dock with LG Home, LG Settings, Quick TV settings and Setup, and a beam showing the remote is on the SHIELD"> | <img src="docs/images/screenshots/quick-settings.png" alt="Quick TV settings as a sheet over the launcher: input, picture mode, OLED brightness, energy saving, sound mode, sleep timer and logo dimming"> |
 
 The "LG apps" row on Projectivy's home screen, with the Continue card first:
 
@@ -118,7 +123,7 @@ Open Prism on the box. Setup is one list; work down it.
    ```
 
    Setup shows "Off · needs adb" until it's done.
-6. **Follow the TV.** Turn it on, and the remote follows whatever the TV shows.
+6. **Remote follows the TV.** Turn it on, and the remote follows whatever the TV shows.
 
 Prism stays open behind whatever it opens on the LG, so it is still there under LG Settings and other LG menus
 that cover only part of the screen. To have it close instead, turn on **Close after opening on the LG**.
@@ -152,9 +157,14 @@ is written until you turn it on. The Home Assistant user needs no extra rights f
   remote's own voice button).
 - **Going back to the box.** Hold Back for 0.8 s, or press Home.
 - **The launcher.** OK on a tile opens it on the LG, and the remote follows. Favourites are chosen in Setup →
-  Favourites, in any order. The header's live line says where the remote is: "On the LG · BBC iPlayer", "On the
-  SHIELD" (the box's own name, from Android's settings), "The TV is off", or the step that's failing.
-- **Quick TV settings.** Left and Right step a value; it's sent after half a second, or when you leave the row.
+  Favourites, in any order; the grid shows the first seven apps, favourites first, then recent ones, then the TV's
+  others, and the rest stay in All apps. The line at the foot says where the remote is, as a beam from the box to the LG and in words: "On the LG ·
+  BBC iPlayer", "On the SHIELD" (the box's own name, from Android's settings), "The TV is off", or the step that's
+  failing.
+- **Quick TV settings.** Left and Right step a value; it's sent after half a second, or when you leave the row. The
+  sheet covers Prism's own launcher, not other apps.
+- **Themes.** Setup → Theme goes round them. Setup → Dusk after sunset reads Home Assistant's `sun.sun` once a minute
+  while Prism is open; if that entity is missing or hidden from Prism's user, the chosen theme simply stays.
 - **Home-screen rows.** "LG apps" has the Continue card and your favourites; "LG commands" has LG Home, LG
   Settings, Quick TV settings and one "Switch to" card for each input the TV has used lately, under the TV's own
   name for it (Setup can hide this row). Projectivy keeps new channels hidden: open its settings (the gear at the
@@ -195,6 +205,8 @@ python3 tools/build.py --release    # build/prism-<version>.apk, not debuggable,
 Keystores are git-ignored; never commit one.
 
 Other tools: `tests/emulator_smoke.py` runs the APK on an Android emulator against a fake Home Assistant;
+`tests/ui_tour.py` takes screenshots of the launcher and its pages in every theme there, and fails if anything on the
+launcher is off the screen;
 `tools/hero.py` draws the README hero and screenshots from screenshots taken on the box and one the TV took of
 itself;
 `tools/brand.py` draws the launcher icon, TV banner and social preview from the SVGs in

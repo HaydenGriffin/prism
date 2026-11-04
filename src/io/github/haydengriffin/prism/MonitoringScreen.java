@@ -29,7 +29,7 @@ final class MonitoringScreen {
 
     static String summary(Context c) {
         String entity = entity(c);
-        return entity == null ? "Off" : entity;
+        return entity == null ? "Off" : "On";
     }
 
     void open() {

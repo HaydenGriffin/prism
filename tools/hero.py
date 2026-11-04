@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Draw the README hero and the README screenshots from real screenshots of the app on an Android TV box.
+"""Draw the README hero and the README screenshots from screenshots of the app.
 
     docs/images/hero.png                         3200 × 1640: LG Settings over the launcher on a TV, Quick TV
                                                  settings and the "LG apps" row beside it, with the lockup and
@@ -8,7 +8,8 @@
     docs/images/screenshots/quick-settings.png   Quick TV settings
     docs/images/screenshots/home-rows.png        the "LG apps" row in Projectivy, cropped to the row
 
-The screenshots are 1920 × 1080 PNGs taken on the box with `adb exec-out screencap -p > launcher.png`:
+The screenshots are 1920 × 1080 PNGs. launcher.png and quick.png come from tests/ui_tour.py, cropped to 1080 rows;
+rows.png is taken on a box with `adb exec-out screencap -p > rows.png`:
 
     pip install pillow
     python3 tools/hero.py SCREENS_DIR    # holds launcher.png, quick.png and rows.png
@@ -48,7 +49,7 @@ TAGLINE = [  # (text, font, colour, line height)
 # Regions of the 1920 × 1080 screenshots (left, top, right, bottom).
 ROWS_CROP = (40, 650, 1880, 1048)     # the "LG apps" row; below it Projectivy starts the next row's title
 ROWS_HERO_CROP = (40, 740, 1880, 1048)  # the row's cards, for the hero (its caption names the row)
-QUICK_CROP = (40, 222, 1880, 772)     # the first four settings, for the hero (its caption is the title)
+QUICK_CROP = (984, 180, 1848, 424)    # the sheet's first two settings, for the hero (its caption is the title)
 
 
 def font(weight, size):

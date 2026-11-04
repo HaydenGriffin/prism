@@ -29,13 +29,16 @@ TOKEN = 'fixture'
 WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 
 HEARTBEAT = 'input_text.prism'
+FOLLOW = 'Remote follows the TV'
+NOT_FOLLOWING = "The remote isn't following the TV"
 ROLES = {'active_app': 'sensor.renamed_foreground', 'app': 'select.renamed_apps', 'input_source': 'select.renamed_input'}
 ROLES.update({f'remote_{k}': f'button.renamed_{k}' for k in ('up', 'down', 'left', 'right', 'ok', 'back', 'home')})
 ROLES.update({k: f'button.renamed_{k}' for k in ('play', 'pause', 'play_pause')})
 APPS = {'Video': 'example.video', 'Music': 'example.music', 'Settings': 'com.palm.app.settings'}
 ENTITY_REGISTRY = [{'entity_id': entity, 'unique_id': f'fixture_{role}', 'device_id': 'fixture-device', 'disabled_by': None}
                    for role, entity in ROLES.items()]
-DEVICE_REGISTRY = [{'id': 'fixture-device', 'name': 'Test LG', 'name_by_user': None}]
+TV_NAME = 'Test LG'
+DEVICE_REGISTRY = [{'id': 'fixture-device', 'name': TV_NAME, 'name_by_user': None}]
 # Linux input codes for the Android keys the service forwards.
 LINUX_KEYS = {19: 103, 20: 108, 21: 105, 22: 106, 23: 28, 4: 158, 85: 164}
 
@@ -307,7 +310,9 @@ class Device:
 
     def dump(self):
         for attempt in range(3):
-            # uiautomator is occasionally killed on a freshly booted emulator; a retry succeeds.
+            # uiautomator is occasionally killed on a freshly booted emulator; a retry succeeds. A failed dump leaves
+            # the last one in place, so that goes first: an old screen must never pass for this one.
+            self.adb('shell', 'rm', '-f', '/data/local/tmp/lg-auto.xml', check=False)
             if self.adb('shell', 'uiautomator', 'dump', '/data/local/tmp/lg-auto.xml', check=False) is not None:
                 try:
                     return ET.fromstring(self.adb('exec-out', 'cat', '/data/local/tmp/lg-auto.xml'))
@@ -354,7 +359,7 @@ class Device:
 
     def service_bound(self):
         dump = self.shell('dumpsys', 'accessibility').decode()
-        return 'LG remote' in dump.split('Bound services:')[1].split('Enabled services:')[0]
+        return 'label=Prism' in dump.split('Bound services:')[1].split('Enabled services:')[0]
 
     def service_dump(self):
         return self.shell('dumpsys', 'accessibility', '--package', PACKAGE).decode()
@@ -399,7 +404,7 @@ class Smoke:
         self.held_back()
         self.stall_and_outage()
         self.favourites_and_large_text()
-        print('PASS: registry setup (Back to Choose the TV), heartbeat, push routing (no state polling), background '
+        print('PASS: registry setup (Back to Choose your TV), heartbeat, push routing (no state polling), background '
               'keys/media over the socket, virtual rejection, input handover, held Back, HA stall tolerance, '
               'outage/reconnect, favourites, large text')
 
@@ -423,35 +428,35 @@ class Smoke:
             subprocess.run(['python3', str(ROOT / 'tools/configure.py'), '--serial', d.serial,
                             '--url', f'http://127.0.0.1:{self.port}', '--token-file', str(token), '--apply'],
                            check=True, capture_output=True)
-        wait(lambda: d.visible('Choose the TV'), 'saved connection opens Choose the TV')
+        wait(lambda: d.visible('Choose your TV'), 'saved connection opens Choose your TV')
         assert b'connection.json' not in d.adb('shell', 'run-as', PACKAGE, 'ls', 'files')
         assert TOKEN.encode() not in d.adb('shell', 'run-as', PACKAGE, 'cat', 'shared_prefs/connection.xml')
 
     def choose_tv(self):
         d = self.device
-        wait(lambda: d.visible('Test LG'), 'registry discovery over the WebSocket')
-        d.click('Test LG')
+        wait(lambda: d.visible(TV_NAME), 'registry discovery over the WebSocket')
+        d.click(TV_NAME)
         wait(lambda: d.visible('Use HDMI 2'), 'detect Shield input')
         d.shell('input', 'keyevent', '4')
-        wait(lambda: d.visible('Choose the TV'), 'Back from Shield input returns to Choose the TV')
-        wait(lambda: d.visible('Test LG'), 'rediscovered')
-        d.click('Test LG')
+        wait(lambda: d.visible('Choose your TV'), 'Back from Shield input returns to Choose your TV')
+        wait(lambda: d.visible(TV_NAME), 'rediscovered')
+        d.click(TV_NAME)
         wait(lambda: d.visible('Use HDMI 2'), 'detect Shield input again')
         d.shot('setup-current-input')
         d.click('Use HDMI 2')
-        wait(lambda: d.visible('Following the TV is off'), 'launcher asks to turn on Follow the TV')
+        wait(lambda: d.visible(NOT_FOLLOWING), 'launcher asks to turn on following')
         assert not self.tv.recorded(), 'setup must never send commands'
         d.shot('home-off')
 
     def enable_automatic(self):
         d = self.device
-        d.click('Following the TV is off')
-        wait(lambda: d.visible('Follow the TV'), 'Setup list')
+        d.click(NOT_FOLLOWING)
+        wait(lambda: d.visible(FOLLOW), 'Setup list')
         d.click('Monitoring')
         wait(lambda: d.visible('Turn on'), 'Monitoring page, off by default')
         d.click('Turn on')
-        wait(lambda: d.visible(HEARTBEAT), 'monitoring on in Setup')
-        d.click('Follow the TV')
+        wait(lambda: d.visible(FOLLOW), 'back in Setup with monitoring on')
+        d.click(FOLLOW)
         wait(lambda: d.visible('Open Android settings'), 'permission disclosure')
         d.shot('permission')
         d.shell('settings', 'put', 'secure', 'enabled_accessibility_services', f'{PACKAGE}/.AutomaticService')
