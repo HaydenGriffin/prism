@@ -161,6 +161,8 @@ public final class UiTests {
                 t.name + ": words on the sheet's rows");
             check(Theme.contrast(t.muted, t.groundBottom) >= 4.5, t.name + ": muted words on the ground");
             check(Theme.contrast(t.error, t.groundTop) >= 4.5 && Theme.contrast(t.warn, t.groundTop) >= 4.5, t.name + ": warnings on the ground");
+            check(Theme.contrast(t.error, Theme.over(t.panel, t.groundTop)) >= 4.5 && Theme.contrast(t.warn, Theme.over(t.panel, t.groundTop)) >= 4.5,
+                t.name + ": a fix-this row's words");
             check(Theme.contrast(t.accent, t.groundBottom) >= 3 && Theme.contrast(t.accent, top) >= 3, t.name + ": the focus ring shows");
             check(Theme.contrast(t.accentInk, t.accent) >= 3, t.name + ": a star on the accent");
             check(Theme.contrast(t.sky, t.groundBottom) >= 3 && Theme.contrast(t.amber, t.groundBottom) >= 3, t.name + ": the beam's ends show");

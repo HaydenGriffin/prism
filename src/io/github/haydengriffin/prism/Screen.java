@@ -622,6 +622,14 @@ final class Screen {
         return row;
     }
 
+    /** A fix-this row says how serious it is: a failure in the error colour, a blocker in the warning colour. */
+    void tintFixRow(LinearLayout row, Status.Tone tone) {
+        if (tone != Status.Tone.ALERT && tone != Status.Tone.WARN) return;
+        int c = color(tone == Status.Tone.ALERT ? R.color.error : R.color.warn);
+        ((ImageView) row.getChildAt(0)).setImageTintList(ColorStateList.valueOf(c));
+        ((TextView) row.getChildAt(1)).setTextColor(c);
+    }
+
     static void setValue(LinearLayout row, String value) {
         TextView v = row.findViewWithTag("value");
         if (v != null) v.setText(value);

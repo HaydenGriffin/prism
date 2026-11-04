@@ -52,6 +52,7 @@ final class LauncherScreen {
         String action = !setUp ? "Set up" : failing ? "Check" : blocked ? "Allow" : "Turn on";
         Host.Page fix = !setUp || failing ? Host.Page.CONNECTION : blocked ? Host.Page.PERMISSION : Host.Page.SETUP;
         LinearLayout row = s.listRow(R.drawable.ic_alert, status.text, action, true, () -> host.show(fix));
+        s.tintFixRow(row, status.tone);
         row.setTag("attention");
     }
 
