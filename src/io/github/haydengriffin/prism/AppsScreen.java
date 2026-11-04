@@ -11,8 +11,8 @@ import java.util.List;
  */
 final class AppsScreen {
     static final int COLUMNS = 6;
-    private static final int TILE = 94, CHIP = 44;
-    private static final float NAME = 14;
+    private static final int TILE = 94;
+    private static final Screen.TileSize SIZE = new Screen.TileSize(44, 14, 4);
     private final Host host;
 
     AppsScreen(Host host) { this.host = host; }
@@ -48,7 +48,7 @@ final class AppsScreen {
 
     private void appTile(Screen s, LinearLayout row, Apps.App app, boolean choosing) {
         boolean favourite = choosing && host.favourites().contains(app.id);
-        s.appTile(row, app, favourite, host.icons(), CHIP, NAME, () -> {
+        s.appTile(row, app, favourite, host.icons(), SIZE, () -> {
             if (!choosing) { host.launch(app); return; }
             host.favourites().toggle(app.id, app.title);
             host.saveFavourites();
@@ -58,8 +58,8 @@ final class AppsScreen {
 
     /** The page's one action closes the grid, so the apps get the whole screen. */
     private void action(Screen s, LinearLayout row, boolean choosing) {
-        if (choosing) s.glyphTile(row, "Done", R.drawable.ic_check, CHIP, NAME, () -> host.show(Host.Page.LAUNCHER)).setTag("done");
-        else s.glyphTile(row, "Choose favourites", R.drawable.ic_star_outline, CHIP, NAME, () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
+        if (choosing) s.glyphTile(row, "Done", R.drawable.ic_check, SIZE, () -> host.show(Host.Page.LAUNCHER)).setTag("done");
+        else s.glyphTile(row, "Choose favourites", R.drawable.ic_star_outline, SIZE, () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
     }
 
     private void load(boolean choosing, android.widget.TextView reading) {

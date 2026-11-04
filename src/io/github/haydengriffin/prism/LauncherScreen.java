@@ -11,8 +11,8 @@ import java.util.List;
  */
 final class LauncherScreen {
     private static final int COLUMNS = LauncherLayout.COLUMNS;
-    private static final int CHIP = 84, SHORT_CHIP = 66, BIG_ART = 150, SHORT_BIG_ART = 100;
-    private static final float NAME = 17;
+    private static final int BIG_ART = 150, SHORT_BIG_ART = 100;
+    private static final Screen.TileSize TILE = new Screen.TileSize(84, 17, 22), SHORT_TILE = new Screen.TileSize(66, 17, 10);
     /** The Quick TV settings tile, which gets the focus back when its sheet closes. */
     static final String QUICK = "quick";
     /** The big tile, where the focus starts: opening an app is what the launcher is for, even with a fix-this row up. */
@@ -62,19 +62,19 @@ final class LauncherScreen {
         int art = attention ? SHORT_BIG_ART : BIG_ART;
         LinearLayout column = s.deckRow(LauncherLayout.deckHeight(attention), row -> bigTile(s, row, deck, art));
         boolean choose = favourites.isEmpty() && deck.hero != null;
-        int chip = attention ? SHORT_CHIP : CHIP;
+        Screen.TileSize size = attention ? SHORT_TILE : TILE;
         int next = 0;
         for (int r = 0; r < LauncherLayout.GRID_ROWS; r++) {
             LinearLayout row = s.grid(column, COLUMNS, LauncherLayout.tileHeight(attention));
             if (r == LauncherLayout.GRID_ROWS - 1) ((LinearLayout.LayoutParams) row.getLayoutParams()).bottomMargin = 0;
             for (int c = 0; c < COLUMNS; c++) {
                 if (r == LauncherLayout.GRID_ROWS - 1 && c == COLUMNS - 1) {
-                    s.glyphTile(row, "All apps", R.drawable.ic_apps, chip, NAME, () -> host.show(Host.Page.APPS)).setTag("apps");
+                    s.glyphTile(row, "All apps", R.drawable.ic_apps, size, () -> host.show(Host.Page.APPS)).setTag("apps");
                 } else if (r == 0 && c == 0 && choose) {
-                    s.glyphTile(row, "Choose favourites", R.drawable.ic_star_outline, chip, NAME, () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
+                    s.glyphTile(row, "Choose favourites", R.drawable.ic_star_outline, size, () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
                 } else if (next < deck.grid.size()) {
                     Apps.App app = deck.grid.get(next++);
-                    s.appTile(row, app, false, host.icons(), chip, NAME, () -> host.launch(app)).setTag(app.id);
+                    s.appTile(row, app, false, host.icons(), size, () -> host.launch(app)).setTag(app.id);
                 } else if (deck.grid.isEmpty() && r == 0 && status.tone != Status.Tone.ALERT) {
                     s.quiet(row, "Apps you open on the LG show up here", COLUMNS - c);
                     break;

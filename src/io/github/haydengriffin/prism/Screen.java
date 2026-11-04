@@ -32,6 +32,8 @@ final class Screen {
     static final int EDGE_X = 48, EDGE_Y = LauncherLayout.EDGE, GAP = LauncherLayout.GAP;
     private static final int ROW = 50, ROW_GAP = 6, SHEET_WIDTH = 480;
     private static final float TILE_LIFT = 1.045f, BIG_LIFT = 1.02f;
+    /** A name wrapped onto two lines still reads as one name. */
+    private static final float NAME_SPACING = 0.92f;
     /** Light letters for a dark app colour, whatever the theme. */
     private static final int LETTER = 0xFFF4F2EE;
     private final Activity activity;
@@ -143,7 +145,7 @@ final class Screen {
         titles.setOrientation(LinearLayout.VERTICAL);
         titles.addView(text(title, 26, R.color.text, true));
         subtitle = text(sub == null ? "" : sub, 16, R.color.muted, false);
-        subtitle.setVisibility(sub == null || sub.isEmpty() ? View.GONE : View.VISIBLE);
+        subtitle.setVisibility(sub == null || sub.isEmpty() ? View.INVISIBLE : View.VISIBLE); // headers keep one height
         titles.addView(subtitle);
         header.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
 
@@ -322,6 +324,7 @@ final class Screen {
         t.setTextColor(color(error ? R.color.error : R.color.muted));
         t.setText(value);
         t.setPadding(0, 0, 0, dp(12));
+        t.setMaxWidth(dp(640)); // a readable measure
         t.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         content.addView(t);
         return t;
@@ -400,6 +403,7 @@ final class Screen {
         body.addView(what);
         TextView name = text(big, 34, R.color.text, true);
         name.setPadding(0, dp(4), 0, 0);
+        name.setLineSpacing(0, NAME_SPACING);
         name.setMaxLines(2);
         name.setEllipsize(TextUtils.TruncateAt.END);
         body.addView(name);
@@ -429,17 +433,29 @@ final class Screen {
         return tile;
     }
 
+    /** How a grid sizes its tiles. Art sits at a fixed inset, so it lines up along a row however long the names are. */
+    static final class TileSize {
+        final int chip, top;
+        final float name;
+
+        TileSize(int chip, float name, int top) {
+            this.chip = chip;
+            this.name = name;
+            this.top = top;
+        }
+    }
+
     /** A grid tile for a place rather than an app (All apps, Choose favourites): a glyph where the app's art would be. */
-    FrameLayout glyphTile(LinearLayout row, String label, int iconRes, int chipDp, float nameSp, Runnable action) {
-        FrameLayout tile = gridTile(row, 0, action);
+    FrameLayout glyphTile(LinearLayout row, String label, int iconRes, TileSize size, Runnable action) {
+        FrameLayout tile = gridTile(row, 0, size, action);
         LinearLayout body = (LinearLayout) tile.getChildAt(0);
-        body.addView(glyph(iconRes, chipDp), new LinearLayout.LayoutParams(dp(chipDp), dp(chipDp)));
-        tileName(body, label, nameSp);
+        body.addView(glyph(iconRes, size.chip), new LinearLayout.LayoutParams(dp(size.chip), dp(size.chip)));
+        tileName(body, label, size.name);
         tile.setContentDescription(label);
         return tile;
     }
 
-    private FrameLayout gridTile(LinearLayout row, int wash, Runnable action) {
+    private FrameLayout gridTile(LinearLayout row, int wash, TileSize size, Runnable action) {
         FrameLayout tile = new FrameLayout(activity);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -1, 1);
         if (row.getChildCount() > 0) lp.setMarginStart(dp(GAP));
@@ -448,8 +464,8 @@ final class Screen {
         focusable(tile, 20, TILE_LIFT, wash, action);
         LinearLayout body = new LinearLayout(activity);
         body.setOrientation(LinearLayout.VERTICAL);
-        body.setGravity(Gravity.CENTER);
-        body.setPadding(dp(8), dp(4), dp(8), dp(4));
+        body.setGravity(Gravity.CENTER_HORIZONTAL);
+        body.setPadding(dp(8), dp(size.top), dp(8), 0);
         tile.addView(body, new FrameLayout.LayoutParams(-1, -1));
         return tile;
     }
@@ -458,6 +474,7 @@ final class Screen {
     private void tileName(LinearLayout body, String label, float sp) {
         TextView name = text(label, sp, R.color.text, true);
         name.setPadding(0, dp(4), 0, 0);
+        name.setLineSpacing(0, NAME_SPACING);
         name.setMaxLines(2);
         name.setEllipsize(TextUtils.TruncateAt.END);
         name.setGravity(Gravity.CENTER);
@@ -522,11 +539,11 @@ final class Screen {
     }
 
     /** An app tile: the app's art on its own LG colour, and its name under it. */
-    FrameLayout appTile(LinearLayout row, Apps.App app, boolean marked, IconCache icons, int chipDp, float nameSp, Runnable action) {
-        FrameLayout tile = gridTile(row, appColor(app), action);
+    FrameLayout appTile(LinearLayout row, Apps.App app, boolean marked, IconCache icons, TileSize size, Runnable action) {
+        FrameLayout tile = gridTile(row, appColor(app), size, action);
         LinearLayout body = (LinearLayout) tile.getChildAt(0);
-        body.addView(chip(app, icons, chipDp, Math.round(chipDp * 0.48f)), new LinearLayout.LayoutParams(dp(chipDp), dp(chipDp)));
-        tileName(body, app.title, nameSp);
+        body.addView(chip(app, icons, size.chip, Math.round(size.chip * 0.48f)), new LinearLayout.LayoutParams(dp(size.chip), dp(size.chip)));
+        tileName(body, app.title, size.name);
         if (marked) {
             ImageView star = icon(R.drawable.ic_star, R.color.accent_ink, 20);
             star.setBackground(oval(color(R.color.accent)));

@@ -58,7 +58,7 @@ final class SetupScreen {
         s.listRow(R.drawable.ic_check, "Monitoring", MonitoringScreen.summary(activity), true,
             () -> host.show(Host.Page.MONITORING)).setTag("monitoring");
         s.endColumns();
-        if (showFix) s.note("From a computer, run: " + DozeExemption.fix(activity), false);
+        if (showFix) s.note("From a computer, run: " + DozeExemption.fix(activity), false).setMaxWidth(s.dp(864)); // one line, to stay on screen
         focus(focusTag);
     }
 
@@ -90,7 +90,7 @@ final class SetupScreen {
         s.note("Prism uses Android accessibility to receive the remote's arrows, OK, Back and play buttons while "
             + "another app is open. It forwards them to the TV only while an LG app is in front. It cannot read the "
             + "screen or anything typed.", false);
-        s.note("On the box: Settings → Device Preferences → Accessibility → Prism.", false);
+        s.note("On " + host.box().the() + ": Settings → Device Preferences → Accessibility → Prism.", false);
         LinearLayout actions = new LinearLayout(activity);
         s.content.addView(actions);
         s.pill(actions, AutomaticService.live != null ? "Allowed · open settings" : "Open Android settings", this::openAccessibility)
