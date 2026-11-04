@@ -23,7 +23,7 @@ final class Status {
 
     static Status of(boolean setUp, boolean enabled, boolean bound, RemoteState state, BoxName box) {
         if (!setUp) return new Status("Finish setup to start", Status.Tone.WARN, true);
-        if (!enabled) return new Status("Following the TV is off", Status.Tone.QUIET, true);
+        if (!enabled) return new Status("The remote isn't following the TV", Status.Tone.QUIET, true);
         if (!bound) return new Status("Remote permission is off", Status.Tone.WARN, true);
         switch (state.mode) {
             case LG: return new Status(state.detail.isEmpty() ? "On the LG" : "On the LG · " + state.detail, Status.Tone.SKY, false);
@@ -33,7 +33,7 @@ final class Status {
             case PAUSED: return new Status("Back on " + box.the(), Status.Tone.NEUTRAL, false);
             case CONNECTING: return new Status("Connecting to Home Assistant…", Status.Tone.QUIET, false);
             case ERROR:
-                return new Status(state.detail.isEmpty() ? "Home Assistant is not answering" : state.detail, Status.Tone.ALERT, false);
+                return new Status(state.detail.isEmpty() ? "Home Assistant is not answering" : state.detail, Status.Tone.ALERT, true);
             // The app's own checks above passed; the service is still catching up (just installed or reconnecting).
             default: return new Status("Connecting to Home Assistant…", Status.Tone.QUIET, false);
         }

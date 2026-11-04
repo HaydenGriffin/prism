@@ -43,7 +43,6 @@ final class Screen {
     LinearLayout content;
     private TextView status;
     private Status.Tone statusTone;
-    private View statusDot;
     private BeamView beam;
     private TextView subtitle;
     private LinearLayout[] columns;
@@ -109,7 +108,6 @@ final class Screen {
         activity.setContentView(root);
         status = null;
         statusTone = null;
-        statusDot = null;
         beam = null;
         subtitle = null;
         columns = null;
@@ -151,8 +149,8 @@ final class Screen {
 
         LinearLayout live = new LinearLayout(activity);
         live.setGravity(Gravity.CENTER_VERTICAL);
-        statusDot = new View(activity);
-        live.addView(statusDot, new LinearLayout.LayoutParams(dp(12), dp(12)));
+        beam = new BeamView(activity, theme.amber, theme.sky, theme.text, theme.groundTop);
+        live.addView(beam, new LinearLayout.LayoutParams(dp(64), dp(20)));
         status = text("", 18, R.color.text, true);
         status.setPadding(dp(10), 0, 0, 0);
         status.setMaxLines(1);
@@ -203,7 +201,7 @@ final class Screen {
         content.addView(line, lp);
     }
 
-    /** The live line. The dot and beam carry meaning with the words, never alone. */
+    /** The live line. The beam carries meaning with the words, never alone. */
     void status(String text, Status.Tone tone) {
         if (status == null) return;
         // Called twice a second: with nothing new to say, the page must not redraw (or stop being idle).
@@ -211,15 +209,6 @@ final class Screen {
         statusTone = tone;
         status.setText(text);
         if (beam != null) beam.show(tone == Status.Tone.SKY ? BeamView.End.LG : tone == Status.Tone.NEUTRAL ? BeamView.End.BOX : BeamView.End.NONE);
-        if (statusDot != null) {
-            GradientDrawable dot = new GradientDrawable();
-            dot.setShape(GradientDrawable.OVAL);
-            int c = tone == Status.Tone.SKY ? theme.sky : color(tone == Status.Tone.WARN ? R.color.warn
-                : tone == Status.Tone.ALERT ? R.color.error : tone == Status.Tone.NEUTRAL ? R.color.text : R.color.muted);
-            if (tone == Status.Tone.WARN || tone == Status.Tone.QUIET) dot.setStroke(dp(2), c); // outlined: needs a look, or idle
-            else dot.setColor(c);
-            statusDot.setBackground(dot);
-        }
         status.setTextColor(color(tone == Status.Tone.ALERT ? R.color.error : tone == Status.Tone.QUIET ? R.color.muted : R.color.text));
     }
 
@@ -235,7 +224,7 @@ final class Screen {
      */
     void openSheet(String title) {
         scrim = new View(activity);
-        scrim.setBackgroundColor(0x59000000);
+        scrim.setBackgroundColor(Theme.luminance(theme.groundTop) > 0.5 ? 0x26000000 : 0x59000000);
         root.addView(scrim, new FrameLayout.LayoutParams(-1, -1));
         sheet = new FrameLayout(activity);
         GradientDrawable plate = new GradientDrawable();
@@ -332,7 +321,7 @@ final class Screen {
         t.setTypeface(words);
         t.setTextColor(color(error ? R.color.error : R.color.muted));
         t.setText(value);
-        t.setPadding(dp(2), 0, 0, dp(12));
+        t.setPadding(0, 0, 0, dp(12));
         t.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         content.addView(t);
         return t;
@@ -374,19 +363,19 @@ final class Screen {
     private static final int BIG_TILE_WIDTH = 300;
 
     /** The big tile: an app's art at its own size and colour, what pressing it does, and its name. */
-    FrameLayout bigAppTile(LinearLayout row, Apps.App app, String label, IconCache icons, Runnable action) {
+    FrameLayout bigAppTile(LinearLayout row, Apps.App app, String label, IconCache icons, int artDp, Runnable action) {
         FrameLayout tile = bigTile(row, action, appColor(app));
         LinearLayout body = (LinearLayout) tile.getChildAt(0);
-        body.addView(chip(app, icons, 150, 72), 0, new LinearLayout.LayoutParams(dp(150), dp(150)));
+        body.addView(chip(app, icons, artDp, Math.round(artDp * 0.48f)), 0, new LinearLayout.LayoutParams(dp(artDp), dp(artDp)));
         bigWords(tile, body, label, app.title);
         return tile;
     }
 
     /** The big tile with a glyph instead of an app, when there is no app to offer yet. */
-    FrameLayout bigGlyphTile(LinearLayout row, String title, String detail, int iconRes, Runnable action) {
+    FrameLayout bigGlyphTile(LinearLayout row, String title, String detail, int iconRes, int artDp, Runnable action) {
         FrameLayout tile = bigTile(row, action, 0);
         LinearLayout body = (LinearLayout) tile.getChildAt(0);
-        body.addView(glyph(iconRes, 150), 0, new LinearLayout.LayoutParams(dp(150), dp(150)));
+        body.addView(glyph(iconRes, artDp), 0, new LinearLayout.LayoutParams(dp(artDp), dp(artDp)));
         bigWords(tile, body, detail, title);
         return tile;
     }
@@ -433,7 +422,7 @@ final class Screen {
         body.addView(icon, new LinearLayout.LayoutParams(dp(26), dp(26)));
         TextView name = text(label, 17, R.color.text, true);
         name.setPadding(dp(12), 0, 0, 0);
-        name.setMaxLines(1);
+        name.setMaxLines(2);
         name.setEllipsize(TextUtils.TruncateAt.END);
         body.addView(name);
         tile.setContentDescription(label);
@@ -441,11 +430,11 @@ final class Screen {
     }
 
     /** A grid tile for a place rather than an app (All apps, Choose favourites): a glyph where the app's art would be. */
-    FrameLayout glyphTile(LinearLayout row, String label, int iconRes, int chipDp, Runnable action) {
+    FrameLayout glyphTile(LinearLayout row, String label, int iconRes, int chipDp, float nameSp, Runnable action) {
         FrameLayout tile = gridTile(row, 0, action);
         LinearLayout body = (LinearLayout) tile.getChildAt(0);
         body.addView(glyph(iconRes, chipDp), new LinearLayout.LayoutParams(dp(chipDp), dp(chipDp)));
-        tileName(body, label, 2, 17);
+        tileName(body, label, nameSp);
         tile.setContentDescription(label);
         return tile;
     }
@@ -460,15 +449,16 @@ final class Screen {
         LinearLayout body = new LinearLayout(activity);
         body.setOrientation(LinearLayout.VERTICAL);
         body.setGravity(Gravity.CENTER);
-        body.setPadding(dp(8), dp(8), dp(8), dp(8));
+        body.setPadding(dp(8), dp(4), dp(8), dp(4));
         tile.addView(body, new FrameLayout.LayoutParams(-1, -1));
         return tile;
     }
 
-    private void tileName(LinearLayout body, String label, int lines, float sp) {
+    /** An app's name under its art, on up to two lines so it is never cut to its first word. */
+    private void tileName(LinearLayout body, String label, float sp) {
         TextView name = text(label, sp, R.color.text, true);
-        name.setPadding(0, dp(6), 0, 0);
-        name.setMaxLines(lines);
+        name.setPadding(0, dp(4), 0, 0);
+        name.setMaxLines(2);
         name.setEllipsize(TextUtils.TruncateAt.END);
         name.setGravity(Gravity.CENTER);
         body.addView(name, new LinearLayout.LayoutParams(-1, -2));
@@ -532,11 +522,11 @@ final class Screen {
     }
 
     /** An app tile: the app's art on its own LG colour, and its name under it. */
-    FrameLayout appTile(LinearLayout row, Apps.App app, boolean marked, IconCache icons, int chipDp, int lines, Runnable action) {
+    FrameLayout appTile(LinearLayout row, Apps.App app, boolean marked, IconCache icons, int chipDp, float nameSp, Runnable action) {
         FrameLayout tile = gridTile(row, appColor(app), action);
         LinearLayout body = (LinearLayout) tile.getChildAt(0);
         body.addView(chip(app, icons, chipDp, Math.round(chipDp * 0.48f)), new LinearLayout.LayoutParams(dp(chipDp), dp(chipDp)));
-        tileName(body, app.title, lines, lines > 1 ? 17 : 15);
+        tileName(body, app.title, nameSp);
         if (marked) {
             ImageView star = icon(R.drawable.ic_star, R.color.accent_ink, 20);
             star.setBackground(oval(color(R.color.accent)));

@@ -11,9 +11,12 @@ import java.util.List;
  */
 final class LauncherScreen {
     private static final int COLUMNS = LauncherLayout.COLUMNS;
-    private static final int CHIP = 84, SHORT_CHIP = 66;
+    private static final int CHIP = 84, SHORT_CHIP = 66, BIG_ART = 150, SHORT_BIG_ART = 100;
+    private static final float NAME = 17;
     /** The Quick TV settings tile, which gets the focus back when its sheet closes. */
     static final String QUICK = "quick";
+    /** The big tile, where the focus starts: opening an app is what the launcher is for, even with a fix-this row up. */
+    private static final String BIG = "big";
     private final Host host;
     private List<Apps.App> recent = new ArrayList<>();
     /** The Continue tile's app, or null. Seeded from the last one shown, so a cold start draws it at once. */
@@ -34,7 +37,7 @@ final class LauncherScreen {
         for (LauncherLayout.Row row : LauncherLayout.rows(tv != null, status.needsAction)) {
             switch (row) {
                 case ATTENTION: attention(s, status); break;
-                case DECK: deck(s, status.needsAction); break;
+                case DECK: deck(s, status); break;
                 case DOCK: dock(s); break;
             }
         }
@@ -45,17 +48,20 @@ final class LauncherScreen {
 
     private void attention(Screen s, Status status) {
         boolean setUp = host.credentials() != null && host.profile() != null;
-        String action = !setUp ? "Set up" : status.tone == Status.Tone.WARN ? "Allow" : "Turn on";
-        LinearLayout row = s.listRow(R.drawable.ic_alert, status.text, action, true,
-            () -> host.show(setUp ? Host.Page.SETUP : Host.Page.CONNECTION));
+        boolean failing = status.tone == Status.Tone.ALERT, blocked = status.tone == Status.Tone.WARN;
+        String action = !setUp ? "Set up" : failing ? "Check" : blocked ? "Allow" : "Turn on";
+        Host.Page fix = !setUp || failing ? Host.Page.CONNECTION : blocked ? Host.Page.PERMISSION : Host.Page.SETUP;
+        LinearLayout row = s.listRow(R.drawable.ic_alert, status.text, action, true, () -> host.show(fix));
         row.setTag("attention");
     }
 
-    private void deck(Screen s, boolean attention) {
+    private void deck(Screen s, Status status) {
+        boolean attention = status.needsAction;
         List<Apps.App> favourites = host.favourites().resolve(host.catalog());
-        LauncherLayout.Deck deck = LauncherLayout.deck(resume, favourites, recent);
-        LinearLayout column = s.deckRow(LauncherLayout.deckHeight(attention), row -> bigTile(s, row, deck));
-        boolean choose = favourites.isEmpty() && deck.hero != null && deck.grid.size() < LauncherLayout.GRID_APPS;
+        LauncherLayout.Deck deck = LauncherLayout.deck(resume, favourites, recent, host.catalog());
+        int art = attention ? SHORT_BIG_ART : BIG_ART;
+        LinearLayout column = s.deckRow(LauncherLayout.deckHeight(attention), row -> bigTile(s, row, deck, art));
+        boolean choose = favourites.isEmpty() && deck.hero != null;
         int chip = attention ? SHORT_CHIP : CHIP;
         int next = 0;
         for (int r = 0; r < LauncherLayout.GRID_ROWS; r++) {
@@ -63,13 +69,13 @@ final class LauncherScreen {
             if (r == LauncherLayout.GRID_ROWS - 1) ((LinearLayout.LayoutParams) row.getLayoutParams()).bottomMargin = 0;
             for (int c = 0; c < COLUMNS; c++) {
                 if (r == LauncherLayout.GRID_ROWS - 1 && c == COLUMNS - 1) {
-                    s.glyphTile(row, "All apps", R.drawable.ic_apps, chip, () -> host.show(Host.Page.APPS)).setTag("apps");
+                    s.glyphTile(row, "All apps", R.drawable.ic_apps, chip, NAME, () -> host.show(Host.Page.APPS)).setTag("apps");
                 } else if (r == 0 && c == 0 && choose) {
-                    s.glyphTile(row, "Choose favourites", R.drawable.ic_star_outline, chip, () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
+                    s.glyphTile(row, "Choose favourites", R.drawable.ic_star_outline, chip, NAME, () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
                 } else if (next < deck.grid.size()) {
                     Apps.App app = deck.grid.get(next++);
-                    s.appTile(row, app, false, host.icons(), chip, 2, () -> host.launch(app)).setTag(app.id);
-                } else if (deck.grid.isEmpty() && r == 0) {
+                    s.appTile(row, app, false, host.icons(), chip, NAME, () -> host.launch(app)).setTag(app.id);
+                } else if (deck.grid.isEmpty() && r == 0 && status.tone != Status.Tone.ALERT) {
                     s.quiet(row, "Apps you open on the LG show up here", COLUMNS - c);
                     break;
                 } else {
@@ -79,15 +85,15 @@ final class LauncherScreen {
         }
     }
 
-    private void bigTile(Screen s, LinearLayout row, LauncherLayout.Deck deck) {
+    private void bigTile(Screen s, LinearLayout row, LauncherLayout.Deck deck, int art) {
         if (deck.hero == null) {
-            s.bigGlyphTile(row, "Choose favourites", "Your apps, one press away", R.drawable.ic_star_outline,
-                () -> host.show(Host.Page.FAVOURITES)).setTag("big");
+            s.bigGlyphTile(row, "Choose favourites", "Your apps, one press away", R.drawable.ic_star_outline, art,
+                () -> host.show(Host.Page.FAVOURITES)).setTag(BIG);
             return;
         }
         Apps.App app = deck.hero;
         String label = deck.continues ? "Continue on the LG" : host.favourites().contains(app.id) ? "Favourite" : "Recently used";
-        s.bigAppTile(row, app, label, host.icons(), () -> host.launch(app)).setTag("big");
+        s.bigAppTile(row, app, label, host.icons(), art, () -> host.launch(app)).setTag(BIG);
     }
 
     private void dock(Screen s) {
@@ -141,7 +147,7 @@ final class LauncherScreen {
 
     private void focus(String tag) {
         Screen s = host.screen();
-        View target = tag == null ? null : s.content.findViewWithTag(tag);
+        View target = s.content.findViewWithTag(tag == null ? BIG : tag);
         if (target == null) target = firstFocusable(s.content);
         if (target != null) target.requestFocus();
     }

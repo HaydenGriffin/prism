@@ -200,7 +200,7 @@ class Tour(smoke.Smoke):
         d.shot('apps')
         self.open()
         d.click('Setup')
-        smoke.wait(lambda: d.visible('Follow the TV'), 'Setup')
+        smoke.wait(lambda: d.visible(smoke.FOLLOW), 'Setup')
         time.sleep(0.8)
         d.shot('setup')
         words = [n.get('text') for n in d.tree().iter('node') if n.get('text')]

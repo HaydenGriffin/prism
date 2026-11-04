@@ -49,7 +49,7 @@ final class LauncherLayout {
         final Apps.App hero;
         /** Whether the big tile continues the last app, rather than offering a favourite or a recent one. */
         final boolean continues;
-        /** Up to GRID_APPS apps in order: favourites first, then recently used. */
+        /** Up to GRID_APPS apps in order: favourites, then recently used, then the rest of the TV's apps. */
         final List<Apps.App> grid;
 
         private Deck(Apps.App hero, boolean continues, List<Apps.App> grid) {
@@ -60,10 +60,12 @@ final class LauncherLayout {
     }
 
     /** Favourites past the grid's room stay one press away in All apps. */
-    static Deck deck(Apps.App resume, List<Apps.App> favourites, List<Apps.App> recent) {
-        List<Apps.App> order = new ArrayList<>(favourites);
-        order.addAll(recent);
-        Apps.App hero = resume != null ? resume : order.isEmpty() ? null : order.get(0);
+    static Deck deck(Apps.App resume, List<Apps.App> favourites, List<Apps.App> recent, List<Apps.App> catalog) {
+        List<Apps.App> chosen = new ArrayList<>(favourites);
+        chosen.addAll(recent);
+        Apps.App hero = resume != null ? resume : chosen.isEmpty() ? null : chosen.get(0);
+        List<Apps.App> order = new ArrayList<>(chosen);
+        for (Apps.App app : catalog) if (Apps.launchable(app.id)) order.add(app);
         List<Apps.App> grid = new ArrayList<>();
         List<String> placed = new ArrayList<>();
         if (hero != null) placed.add(hero.id);

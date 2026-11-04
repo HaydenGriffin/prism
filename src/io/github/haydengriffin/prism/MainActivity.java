@@ -58,7 +58,7 @@ public final class MainActivity extends Activity implements Host {
     private final Runnable statusTick = new Runnable() {
         @Override public void run() {
             Status now = status();
-            screen.status(now.text, now.tone);
+            say(now);
             // The launcher's "fix this" row comes and goes with the status; the focus stays where it was.
             if (page == Page.LAUNCHER && shown != null && shown.needsAction != now.needsAction) launcher.redraw();
             shown = now;
@@ -173,8 +173,13 @@ public final class MainActivity extends Activity implements Host {
             case MONITORING: monitoring.open(); break;
         }
         Status now = status();
-        screen.status(now.text, now.tone);
+        say(now);
         shown = now;
+    }
+
+    /** The live line. On the launcher a fix-this row already says it, so the line leaves it to the row. */
+    private void say(Status now) {
+        screen.status(page == Page.LAUNCHER && now.needsAction ? "" : now.text, now.tone);
     }
 
     @Override public void onBackPressed() {
@@ -347,7 +352,7 @@ public final class MainActivity extends Activity implements Host {
                 screen.status("Opened on the LG · the remote follows it there", Status.Tone.SKY);
                 break;
             default:
-                screen.status("Opened on the LG · turn on Follow the TV in Setup for the remote to follow", Status.Tone.WARN);
+                screen.status("Opened on the LG · turn on Remote follows the TV in Setup", Status.Tone.WARN);
         }
     }
 

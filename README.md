@@ -123,7 +123,7 @@ Open Prism on the box. Setup is one list; work down it.
    ```
 
    Setup shows "Off · needs adb" until it's done.
-6. **Follow the TV.** Turn it on, and the remote follows whatever the TV shows.
+6. **Remote follows the TV.** Turn it on, and the remote follows whatever the TV shows.
 
 Prism stays open behind whatever it opens on the LG, so it is still there under LG Settings and other LG menus
 that cover only part of the screen. To have it close instead, turn on **Close after opening on the LG**.

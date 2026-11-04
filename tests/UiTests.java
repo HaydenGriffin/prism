@@ -109,23 +109,29 @@ public final class UiTests {
         check(LauncherLayout.tileHeight(true) >= 120, "a grid tile still holds its art and two lines beside the fix-this row");
         check(LauncherLayout.GRID_APPS == 7, "All apps keeps the grid's eighth place");
 
+        List<Apps.App> none = new ArrayList<>();
         List<Apps.App> favourites = Arrays.asList(app("a", "A"), app("b", "B"));
         List<Apps.App> recent = Arrays.asList(app("c", "C"), app("d", "D"));
-        LauncherLayout.Deck both = LauncherLayout.deck(app("c", "C"), favourites, recent);
+        LauncherLayout.Deck both = LauncherLayout.deck(app("c", "C"), favourites, recent, none);
         check(both.continues && both.hero.id.equals("c") && titles(both.grid).equals("A B D"),
             "Continue is the big tile; favourites come first; nothing shows twice: " + titles(both.grid));
-        LauncherLayout.Deck favourite = LauncherLayout.deck(app("a", "A"), favourites, recent);
+        LauncherLayout.Deck favourite = LauncherLayout.deck(app("a", "A"), favourites, recent, none);
         check(favourite.hero.id.equals("a") && titles(favourite.grid).equals("B C D"), "a favourite on Continue leaves the grid");
-        LauncherLayout.Deck noResume = LauncherLayout.deck(null, favourites, recent);
+        LauncherLayout.Deck noResume = LauncherLayout.deck(null, favourites, recent, none);
         check(!noResume.continues && noResume.hero.id.equals("a") && titles(noResume.grid).equals("B C D"),
             "with nothing to continue, the first favourite takes the big tile");
-        LauncherLayout.Deck onlyRecent = LauncherLayout.deck(null, new ArrayList<>(), recent);
+        LauncherLayout.Deck onlyRecent = LauncherLayout.deck(null, none, recent, none);
         check(!onlyRecent.continues && onlyRecent.hero.id.equals("c"), "or the newest recent app");
-        LauncherLayout.Deck empty = LauncherLayout.deck(null, new ArrayList<>(), new ArrayList<>());
+        LauncherLayout.Deck empty = LauncherLayout.deck(null, none, none, none);
         check(empty.hero == null && empty.grid.isEmpty(), "with no apps at all the big tile offers to choose favourites");
+        List<Apps.App> tv = Arrays.asList(app("c", "C"), app("e", "E"), app(Apps.LaunchIds.SETTINGS, "Settings"), app("f", "F"));
+        LauncherLayout.Deck filled = LauncherLayout.deck(app("a", "A"), favourites, recent, tv);
+        check(titles(filled.grid).equals("B C D E F"), "the TV's other apps fill the grid's holes, once each, without Settings: " + titles(filled.grid));
+        LauncherLayout.Deck notChosen = LauncherLayout.deck(null, none, none, tv);
+        check(notChosen.hero == null && titles(notChosen.grid).equals("C E F"), "apps nobody chose never take the big tile");
         List<Apps.App> many = new ArrayList<>();
         for (int i = 0; i < 12; i++) many.add(app("f" + i, "F" + i));
-        LauncherLayout.Deck full = LauncherLayout.deck(null, many, recent);
+        LauncherLayout.Deck full = LauncherLayout.deck(null, many, recent, none);
         check(full.grid.size() == LauncherLayout.GRID_APPS && full.grid.get(0).id.equals("f1"),
             "favourites past the grid's room wait in All apps");
     }
@@ -216,5 +222,6 @@ public final class UiTests {
         Status failing = Status.of(true, true, true, new RemoteState(RemoteState.Mode.ERROR, "Home Assistant refused the token"), BOX);
         check(failing.tone == Status.Tone.ALERT && failing.text.equals("Home Assistant refused the token"),
             "errors say the failing step");
+        check(failing.needsAction, "a failure gets the launcher's fix-this row");
     }
 }

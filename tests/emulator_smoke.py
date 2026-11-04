@@ -29,6 +29,8 @@ TOKEN = 'fixture'
 WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 
 HEARTBEAT = 'input_text.prism'
+FOLLOW = 'Remote follows the TV'
+NOT_FOLLOWING = "The remote isn't following the TV"
 ROLES = {'active_app': 'sensor.renamed_foreground', 'app': 'select.renamed_apps', 'input_source': 'select.renamed_input'}
 ROLES.update({f'remote_{k}': f'button.renamed_{k}' for k in ('up', 'down', 'left', 'right', 'ok', 'back', 'home')})
 ROLES.update({k: f'button.renamed_{k}' for k in ('play', 'pause', 'play_pause')})
@@ -400,7 +402,7 @@ class Smoke:
         self.held_back()
         self.stall_and_outage()
         self.favourites_and_large_text()
-        print('PASS: registry setup (Back to Choose the TV), heartbeat, push routing (no state polling), background '
+        print('PASS: registry setup (Back to Choose your TV), heartbeat, push routing (no state polling), background '
               'keys/media over the socket, virtual rejection, input handover, held Back, HA stall tolerance, '
               'outage/reconnect, favourites, large text')
 
@@ -424,7 +426,7 @@ class Smoke:
             subprocess.run(['python3', str(ROOT / 'tools/configure.py'), '--serial', d.serial,
                             '--url', f'http://127.0.0.1:{self.port}', '--token-file', str(token), '--apply'],
                            check=True, capture_output=True)
-        wait(lambda: d.visible('Choose the TV'), 'saved connection opens Choose the TV')
+        wait(lambda: d.visible('Choose your TV'), 'saved connection opens Choose your TV')
         assert b'connection.json' not in d.adb('shell', 'run-as', PACKAGE, 'ls', 'files')
         assert TOKEN.encode() not in d.adb('shell', 'run-as', PACKAGE, 'cat', 'shared_prefs/connection.xml')
 
@@ -434,25 +436,25 @@ class Smoke:
         d.click(TV_NAME)
         wait(lambda: d.visible('Use HDMI 2'), 'detect Shield input')
         d.shell('input', 'keyevent', '4')
-        wait(lambda: d.visible('Choose the TV'), 'Back from Shield input returns to Choose the TV')
+        wait(lambda: d.visible('Choose your TV'), 'Back from Shield input returns to Choose your TV')
         wait(lambda: d.visible(TV_NAME), 'rediscovered')
         d.click(TV_NAME)
         wait(lambda: d.visible('Use HDMI 2'), 'detect Shield input again')
         d.shot('setup-current-input')
         d.click('Use HDMI 2')
-        wait(lambda: d.visible('Following the TV is off'), 'launcher asks to turn on Follow the TV')
+        wait(lambda: d.visible(NOT_FOLLOWING), 'launcher asks to turn on following')
         assert not self.tv.recorded(), 'setup must never send commands'
         d.shot('home-off')
 
     def enable_automatic(self):
         d = self.device
-        d.click('Following the TV is off')
-        wait(lambda: d.visible('Follow the TV'), 'Setup list')
+        d.click(NOT_FOLLOWING)
+        wait(lambda: d.visible(FOLLOW), 'Setup list')
         d.click('Monitoring')
         wait(lambda: d.visible('Turn on'), 'Monitoring page, off by default')
         d.click('Turn on')
-        wait(lambda: d.visible(HEARTBEAT), 'monitoring on in Setup')
-        d.click('Follow the TV')
+        wait(lambda: d.visible(FOLLOW), 'back in Setup with monitoring on')
+        d.click(FOLLOW)
         wait(lambda: d.visible('Open Android settings'), 'permission disclosure')
         d.shot('permission')
         d.shell('settings', 'put', 'secure', 'enabled_accessibility_services', f'{PACKAGE}/.AutomaticService')

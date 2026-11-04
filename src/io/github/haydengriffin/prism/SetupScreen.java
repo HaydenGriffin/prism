@@ -16,6 +16,8 @@ final class SetupScreen {
     private final android.app.Activity activity;
     /** The TV picked on Choose the TV, until its Shield input is saved; null when Shield input came from Setup. */
     private TvProfile chosen;
+    /** OK on Stay connected in sleep, which has no setting on the box: Setup's next draw says what to run. */
+    private boolean sleepFixAsked;
 
     SetupScreen(Host host, android.app.Activity activity) {
         this.host = host;
@@ -30,7 +32,7 @@ final class SetupScreen {
         Credentials c = host.credentials();
         boolean enabled = AutomaticService.enabled(activity);
         s.twoColumns();
-        s.listRow(R.drawable.ic_remote, "Follow the TV", enabled ? "On" : "Off", false, this::toggleFollow).setTag("follow");
+        s.listRow(R.drawable.ic_remote, "Remote follows the TV", enabled ? "On" : "Off", false, this::toggleFollow).setTag("follow");
         s.listRow(R.drawable.ic_tv, "Close after opening on the LG", MainActivity.closesAfterOpening(activity) ? "On" : "Off",
             false, this::toggleClose).setTag("close");
         s.listRow(R.drawable.ic_picture, "Theme", host.chosenTheme().name, false, this::nextTheme).setTag("theme");
@@ -45,8 +47,10 @@ final class SetupScreen {
         s.listRow(R.drawable.ic_server, "Home Assistant", c == null ? "Connect" : hostName(c.url), true,
             () -> host.show(Host.Page.CONNECTION)).setTag("connection");
         boolean exempt = DozeExemption.granted(activity);
-        s.listRow(R.drawable.ic_sleep, "Stay connected in sleep", exempt ? "On" : "Off · needs adb", false,
-            () -> open("sleep")).setTag("sleep");
+        boolean showFix = sleepFixAsked;
+        sleepFixAsked = false;
+        s.listRow(R.drawable.ic_sleep, "Stay connected in sleep", exempt ? "On" : "Off · needs adb", !exempt,
+            () -> { sleepFixAsked = !exempt; open("sleep"); }).setTag("sleep");
         int chosen = host.favourites().stored().size();
         s.listRow(R.drawable.ic_star_outline, "Favourites", chosen == 0 ? "None" : String.valueOf(chosen), true,
             () -> host.show(Host.Page.FAVOURITES)).setTag("favourites");
@@ -54,10 +58,7 @@ final class SetupScreen {
         s.listRow(R.drawable.ic_check, "Monitoring", MonitoringScreen.summary(activity), true,
             () -> host.show(Host.Page.MONITORING)).setTag("monitoring");
         s.endColumns();
-        if (!exempt) {
-            s.note("While the box sleeps, Android cuts this app off from Home Assistant. Android TV has no setting for "
-                + "this; from a computer run: " + DozeExemption.fix(activity), true);
-        }
+        if (showFix) s.note("From a computer, run: " + DozeExemption.fix(activity), false);
         focus(focusTag);
     }
 
@@ -152,7 +153,7 @@ final class SetupScreen {
     void chooseTv() {
         Screen s = host.screen();
         chosen = null;
-        s.page("Choose the TV", "Glasshouse TVs in Home Assistant");
+        s.page("Choose your TV", "Glasshouse TVs in Home Assistant");
         if (host.credentials() == null) { host.show(Host.Page.CONNECTION); return; }
         android.widget.TextView note = s.note("Looking for TVs…", false);
         int request = host.request();

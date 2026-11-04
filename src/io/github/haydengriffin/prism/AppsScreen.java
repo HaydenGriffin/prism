@@ -10,7 +10,9 @@ import java.util.List;
  * favourites, in the order chosen).
  */
 final class AppsScreen {
-    static final int COLUMNS = 5;
+    static final int COLUMNS = 6;
+    private static final int TILE = 94, CHIP = 44;
+    private static final float NAME = 14;
     private final Host host;
 
     AppsScreen(Host host) { this.host = host; }
@@ -19,16 +21,10 @@ final class AppsScreen {
         Screen s = host.screen();
         List<Apps.App> apps = launchable(host.catalog());
         s.page(choosing ? "Favourites" : "All apps", subtitle(choosing, apps.size()));
-        LinearLayout actions = new LinearLayout(s.content.getContext());
-        s.content.addView(actions);
-        if (choosing) s.pill(actions, "Done", () -> host.show(Host.Page.LAUNCHER)).setTag("done");
-        else s.pill(actions, "Choose favourites", () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
-        View spacer = new View(s.content.getContext());
-        s.content.addView(spacer, new LinearLayout.LayoutParams(1, s.dp(16)));
         android.widget.TextView reading = apps.isEmpty() ? s.note("Reading the TV's apps…", false) : null;
         grid(s, apps, choosing);
         View target = focusTag == null ? null : s.content.findViewWithTag(focusTag);
-        if (target == null && !apps.isEmpty()) target = s.content.findViewWithTag(apps.get(0).id);
+        if (target == null) target = LauncherScreen.firstFocusable(s.content);
         if (target != null) target.requestFocus();
         if (apps.isEmpty()) load(choosing, reading);
     }
@@ -40,20 +36,30 @@ final class AppsScreen {
     }
 
     private void grid(Screen s, List<Apps.App> apps, boolean choosing) {
-        for (int start = 0; start < apps.size(); start += COLUMNS) {
-            LinearLayout row = s.grid(COLUMNS, 108);
+        for (int start = 0; start <= apps.size(); start += COLUMNS) {
+            LinearLayout row = s.grid(COLUMNS, TILE);
             for (int i = start; i < start + COLUMNS; i++) {
-                if (i >= apps.size()) { s.spacer(row); continue; }
-                Apps.App app = apps.get(i);
-                boolean favourite = choosing && host.favourites().contains(app.id);
-                s.appTile(row, app, favourite, host.icons(), 58, 1, () -> {
-                    if (!choosing) { host.launch(app); return; }
-                    host.favourites().toggle(app.id, app.title);
-                    host.saveFavourites();
-                    open(true, app.id); // redraw with the star, focus stays on this tile
-                }).setTag(app.id);
+                if (i == apps.size()) action(s, row, choosing);
+                else if (i > apps.size()) s.spacer(row);
+                else appTile(s, row, apps.get(i), choosing);
             }
         }
+    }
+
+    private void appTile(Screen s, LinearLayout row, Apps.App app, boolean choosing) {
+        boolean favourite = choosing && host.favourites().contains(app.id);
+        s.appTile(row, app, favourite, host.icons(), CHIP, NAME, () -> {
+            if (!choosing) { host.launch(app); return; }
+            host.favourites().toggle(app.id, app.title);
+            host.saveFavourites();
+            open(true, app.id); // redraw with the star, focus stays on this tile
+        }).setTag(app.id);
+    }
+
+    /** The page's one action closes the grid, so the apps get the whole screen. */
+    private void action(Screen s, LinearLayout row, boolean choosing) {
+        if (choosing) s.glyphTile(row, "Done", R.drawable.ic_check, CHIP, NAME, () -> host.show(Host.Page.LAUNCHER)).setTag("done");
+        else s.glyphTile(row, "Choose favourites", R.drawable.ic_star_outline, CHIP, NAME, () -> host.show(Host.Page.FAVOURITES)).setTag("choose");
     }
 
     private void load(boolean choosing, android.widget.TextView reading) {
