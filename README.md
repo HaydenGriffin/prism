@@ -157,8 +157,8 @@ is written until you turn it on. The Home Assistant user needs no extra rights f
   remote's own voice button).
 - **Going back to the box.** Hold Back for 0.8 s, or press Home.
 - **The launcher.** OK on a tile opens it on the LG, and the remote follows. Favourites are chosen in Setup →
-  Favourites, in any order; the grid shows the first seven apps, favourites before recent ones, and the rest stay in
-  All apps. The line at the foot says where the remote is, as a beam from the box to the LG and in words: "On the LG ·
+  Favourites, in any order; the grid shows the first seven apps, favourites first, then recent ones, then the TV's
+  others, and the rest stay in All apps. The line at the foot says where the remote is, as a beam from the box to the LG and in words: "On the LG ·
   BBC iPlayer", "On the SHIELD" (the box's own name, from Android's settings), "The TV is off", or the step that's
   failing.
 - **Quick TV settings.** Left and Right step a value; it's sent after half a second, or when you leave the row. The
